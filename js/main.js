@@ -196,7 +196,10 @@ LoadingState.preload = function () {
     this.game.load.spritesheet('hero', 'images/hero.png', 36, 42);
     this.game.load.spritesheet('coin', 'images/coin_animated.png', 22, 22);
     this.game.load.spritesheet('spider', 'images/spider.png', 42, 32);
-    this.game.load.spritesheet('door', 'images/door.png', 42, 66);
+    this.game.load.spritesheet('table', 'images/table.png', 22, 66);
+    this.game.load.spritesheet('justin', 'images/justin.png', 42, 32);
+    this.game.load.spritesheet('travis', 'images/travis.png', 42, 32);
+    this.game.load.spritesheet('griffin', 'images/griffin.png', 42, 32);
     this.game.load.spritesheet('icon:key', 'images/key_icon.png', 34, 30);
 
     this.game.load.audio('sfx:jump', 'audio/jump.wav');
@@ -294,10 +297,10 @@ PlayState._handleCollisions = function () {
     // hero vs key (pick up)
     this.game.physics.arcade.overlap(this.hero, this.key, this._onHeroVsKey,
         null, this);
-    // hero vs door (end level)
-    this.game.physics.arcade.overlap(this.hero, this.door, this._onHeroVsDoor,
+    // hero vs table (deliver item)
+    this.game.physics.arcade.overlap(this.hero, this.table, this._onHeroVsTable,
         // ignore if there is no key or the player is on air
-        function (hero, door) {
+        function (hero, table) {
             return this.hasKey && hero.body.touching.down;
         }, this);
     // collision: hero vs enemies (kill or die)
@@ -372,16 +375,10 @@ PlayState._onHeroVsEnemy = function (hero, enemy) {
     }
 };
 
-PlayState._onHeroVsDoor = function (hero, door) {
-    // 'open' the door by changing its graphic and playing a sfx
-    door.frame = 1;
+PlayState._onHeroVsTable = function (hero, table) {
+    // deliver to the table
     this.sfx.door.play();
-
-    // play 'enter door' animation and change to the next level when it ends
-    hero.freeze();
-    this.game.add.tween(hero)
-        .to({x: this.door.x, alpha: 0}, 500, null, true)
-        .onComplete.addOnce(this._goToNextLevel, this);
+    // todo: deliver item
 };
 
 PlayState._goToNextLevel = function () {
@@ -420,7 +417,7 @@ PlayState._loadLevel = function (data) {
     data.ladders.forEach(this._spawnLadder, this);
     data.coins.forEach(this._spawnCoin, this);
     this._spawnKey(data.key.x, data.key.y);
-    this._spawnDoor(data.door.x, data.door.y);
+    this._spawnTable(data.table.x, data.table.y);
 
     // enable gravity
     const GRAVITY = 1200;
@@ -500,11 +497,27 @@ PlayState._spawnKey = function (x, y) {
         .start();
 };
 
-PlayState._spawnDoor = function (x, y) {
-    this.door = this.bgDecoration.create(x, y, 'door');
-    this.door.anchor.setTo(0.5, 1);
-    this.game.physics.enable(this.door);
-    this.door.body.allowGravity = false;
+PlayState._spawnTable = function (x, y) {
+    this.table = this.bgDecoration.create(x, y, 'table');
+    this.table.anchor.setTo(0.5, 1);
+    this.game.physics.enable(this.table);
+    this.table.body.allowGravity = false;
+
+
+    this.justin = this.bgDecoration.create(x - 50, y, 'justin');
+    this.justin.anchor.setTo(0.5, 1);
+    this.game.physics.enable(this.justin);
+    this.justin.body.allowGravity = false;
+
+    this.travis = this.bgDecoration.create(x, y, 'travis');
+    this.travis.anchor.setTo(0.5, 1);
+    this.game.physics.enable(this.travis);
+    this.travis.body.allowGravity = false;
+
+    this.griffin = this.bgDecoration.create(x + 50, y, 'griffin');
+    this.griffin.anchor.setTo(0.5, 1);
+    this.game.physics.enable(this.griffin);
+    this.griffin.body.allowGravity = false;
 };
 
 PlayState._createHud = function () {

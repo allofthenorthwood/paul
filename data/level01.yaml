@@ -9,6 +9,7 @@
         {"image": "grass:6x1", "x": 462, "y": 168},
         {"image": "grass:2x1", "x": 798, "y": 84}
     ],
+    "ladders": [],
     "decoration": [
         {"frame": 0, "x": 84, "y": 504}, {"frame": 1, "x": 420, "y": 504},
         {"frame": 3, "x": 672, "y": 504}, {"frame": 4, "x": 595, "y": 462},

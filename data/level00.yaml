@@ -1,15 +1,18 @@
 {
     "platforms": [
         {"image": "ground", "x": 0, "y": 546},
-        {"image": "grass:4x1", "x": 0, "y": 380}
+        {"image": "grass:6x1", "x": 0, "y": 380},
+        {"image": "grass:8x1", "x": 312, "y": 380},
+        {"image": "grass:6x1", "x": 708, "y": 380}
     ],
     "ladders": [
-        {"image": "ladder:1x4", "x": 169, "y": 379}
+        {"image": "ladder:1x4", "x": 262, "y": 379},
+        {"image": "ladder:1x4", "x": 656, "y": 379}
     ],
     "decoration": [],
     "coins": [],
     "hero": {"x": 21, "y": 525},
     "spiders": [],
-    "door": {"x": 231, "y": 546},
-    "key": {"x": 525, "y": 336}
+    "table": {"x": 480, "y": 380},
+    "key": {"x": 50, "y": 336}
 }
