@@ -1,0 +1,15 @@
+{
+    "platforms": [
+        {"image": "ground", "x": 0, "y": 546},
+        {"image": "grass:4x1", "x": 0, "y": 420}
+    ],
+    "ladders": [
+        {"image": "ladder:1x4", "x": 169, "y": 379}
+    ],
+    "decoration": [],
+    "coins": [],
+    "hero": {"x": 21, "y": 525},
+    "spiders": [],
+    "door": {"x": 231, "y": 546},
+    "key": {"x": 525, "y": 336}
+}

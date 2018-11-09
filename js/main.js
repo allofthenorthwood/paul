@@ -40,10 +40,17 @@ Hero.prototype.move = function (direction) {
         this.scale.x = 1;
     }
 };
+Hero.prototype.climb = function (direction) {
+    // guard
+    if (this.isFrozen) { return; }
+
+    const SPEED = 200;
+    this.body.velocity.y = direction * SPEED;
+};
 
 Hero.prototype.jump = function () {
     const JUMP_SPEED = 400;
-    let canJump = this.body.touching.down && this.alive && !this.isFrozen;
+    let canJump = (this.body.touching.down || ladder) && this.alive && !this.isFrozen;
 
     if (canJump || this.isBoosting) {
         this.body.velocity.y = -JUMP_SPEED;
@@ -168,8 +175,8 @@ LoadingState.init = function () {
 };
 
 LoadingState.preload = function () {
-    this.game.load.json('level:0', 'data/level00.json');
-    this.game.load.json('level:1', 'data/level01.json');
+    this.game.load.text('level:0', 'data/level00.yaml');
+    this.game.load.text('level:1', 'data/level01.yaml');
 
     this.game.load.image('font:numbers', 'images/numbers.png');
 
@@ -182,6 +189,7 @@ LoadingState.preload = function () {
     this.game.load.image('grass:4x1', 'images/grass_4x1.png');
     this.game.load.image('grass:2x1', 'images/grass_2x1.png');
     this.game.load.image('grass:1x1', 'images/grass_1x1.png');
+    this.game.load.image('ladder:1x4', 'images/ladder_1x4.png');
     this.game.load.image('key', 'images/key.png');
 
     this.game.load.spritesheet('decoration', 'images/decor.png', 42, 42);
@@ -213,9 +221,12 @@ const LEVEL_COUNT = 2;
 
 PlayState.init = function (data) {
     this.keys = this.game.input.keyboard.addKeys({
+        x: Phaser.KeyCode.X,
         left: Phaser.KeyCode.LEFT,
         right: Phaser.KeyCode.RIGHT,
-        up: Phaser.KeyCode.UP
+        up: Phaser.KeyCode.UP,
+        down: Phaser.KeyCode.DOWN,
+        space: Phaser.KeyCode.SPACEBAR,
     });
 
     this.coinPickupCount = 0;
@@ -240,7 +251,10 @@ PlayState.create = function () {
 
     // create level entities and decoration
     this.game.add.image(0, 0, 'background');
-    this._loadLevel(this.game.cache.getJSON(`level:${this.level}`));
+
+    let sortaYAML = this.game.cache.getText(`level:${this.level}`)
+    sortaYAML = sortaYAML.replace(/\/\/.*?(?:\n|$)/g, '');
+    this._loadLevel(JSON.parse(sortaYAML));
 
     // create UI score boards
     this._createHud();
@@ -252,6 +266,7 @@ PlayState.update = function () {
 
     // update scoreboards
     this.coinFont.text = `x${this.coinPickupCount}`;
+    this.mousePosFont.text = `${this.game.input.activePointer.x} ${this.game.input.activePointer.y}`;
     this.keyIcon.frame = this.hasKey ? 1 : 0;
 };
 
@@ -267,6 +282,16 @@ PlayState._handleCollisions = function () {
     // hero vs coins (pick up)
     this.game.physics.arcade.overlap(this.hero, this.coins, this._onHeroVsCoin,
         null, this);
+    // hero vs ladder (climb)
+    if (this.game.physics.arcade.overlap(this.hero, this.ladders, this._onHeroVsLadder,
+        null, this))
+    {
+        ladder = true;
+        this.hero.body.allowGravity = false;
+    } else {
+        ladder = false;
+        this.hero.body.allowGravity = true;
+    }
     // hero vs key (pick up)
     this.game.physics.arcade.overlap(this.hero, this.key, this._onHeroVsKey,
         null, this);
@@ -282,19 +307,31 @@ PlayState._handleCollisions = function () {
 };
 
 PlayState._handleInput = function () {
+    const speed = this.keys.x.isDown ? 2 : 1;
     if (this.keys.left.isDown) { // move hero left
-        this.hero.move(-1);
+        this.hero.move(-1 * speed);
     }
     else if (this.keys.right.isDown) { // move hero right
-        this.hero.move(1);
+        this.hero.move(1 * speed);
     }
     else { // stop
         this.hero.move(0);
     }
 
+    if (ladder) {
+        if (this.keys.up.isDown) {
+            this.hero.climb(-1 * speed);
+        } else if (this.keys.down.isDown) {
+            this.hero.climb(1 * speed);
+        } else {
+            this.hero.climb(0);
+        }
+
+    }
+
     // handle jump
     const JUMP_HOLD = 200; // ms
-    if (this.keys.up.downDuration(JUMP_HOLD)) {
+    if (this.keys.space.downDuration(JUMP_HOLD)) {
         let didJump = this.hero.jump();
         if (didJump) { this.sfx.jump.play(); }
     }
@@ -313,6 +350,10 @@ PlayState._onHeroVsCoin = function (hero, coin) {
     this.sfx.coin.play();
     coin.kill();
     this.coinPickupCount++;
+};
+
+PlayState._onHeroVsLadder = function (hero, ladder) {
+  
 };
 
 PlayState._onHeroVsEnemy = function (hero, enemy) {
@@ -362,6 +403,7 @@ PlayState._loadLevel = function (data) {
     // create all the groups/layers that we need
     this.bgDecoration = this.game.add.group();
     this.platforms = this.game.add.group();
+    this.ladders = this.game.add.group();
     this.coins = this.game.add.group();
     this.spiders = this.game.add.group();
     this.enemyWalls = this.game.add.group();
@@ -380,6 +422,7 @@ PlayState._loadLevel = function (data) {
     data.platforms.forEach(this._spawnPlatform, this);
 
     // spawn important objects
+    data.ladders.forEach(this._spawnLadder, this);
     data.coins.forEach(this._spawnCoin, this);
     this._spawnKey(data.key.x, data.key.y);
     this._spawnDoor(data.door.x, data.door.y);
@@ -413,6 +456,15 @@ PlayState._spawnPlatform = function (platform) {
     // spawn invisible walls at each side, only detectable by enemies
     this._spawnEnemyWall(platform.x, platform.y, 'left');
     this._spawnEnemyWall(platform.x + sprite.width, platform.y, 'right');
+};
+
+PlayState._spawnLadder = function (ladder) {
+    let sprite = this.ladders.create(
+        ladder.x, ladder.y, ladder.image);
+
+    // physics (so we can detect overlap with the hero)
+    this.game.physics.enable(sprite);
+    sprite.body.allowGravity = false;
 };
 
 PlayState._spawnEnemyWall = function (x, y, side) {
@@ -465,6 +517,8 @@ PlayState._createHud = function () {
     const NUMBERS_STR = '0123456789X ';
     this.coinFont = this.game.add.retroFont('font:numbers', 20, 26,
         NUMBERS_STR, 6);
+    this.mousePosFont = this.game.add.retroFont('font:numbers', 20, 26,
+        NUMBERS_STR, 6);
 
     this.keyIcon = this.game.make.image(0, 19, 'icon:key');
     this.keyIcon.anchor.set(0, 0.5);
@@ -474,9 +528,14 @@ PlayState._createHud = function () {
         coinIcon.height / 2, this.coinFont);
     coinScoreImg.anchor.set(0, 0.5);
 
+    let mousePosImg = this.game.make.image(200,
+        coinIcon.height / 2, this.mousePosFont);
+    mousePosImg.anchor.set(0, 0.5);
+
     this.hud = this.game.add.group();
     this.hud.add(coinIcon);
     this.hud.add(coinScoreImg);
+    this.hud.add(mousePosImg);
     this.hud.add(this.keyIcon);
     this.hud.position.set(10, 10);
 };
