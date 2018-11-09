@@ -1,7 +1,7 @@
 {
     "platforms": [
         {"image": "ground", "x": 0, "y": 546},
-        {"image": "grass:4x1", "x": 0, "y": 420}
+        {"image": "grass:4x1", "x": 0, "y": 380}
     ],
     "ladders": [
         {"image": "ladder:1x4", "x": 169, "y": 379}

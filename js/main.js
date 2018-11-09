@@ -50,7 +50,7 @@ Hero.prototype.climb = function (direction) {
 
 Hero.prototype.jump = function () {
     const JUMP_SPEED = 400;
-    let canJump = (this.body.touching.down || ladder) && this.alive && !this.isFrozen;
+    let canJump = this.body.touching.down && this.alive && !this.isFrozen;
 
     if (canJump || this.isBoosting) {
         this.body.velocity.y = -JUMP_SPEED;
@@ -283,13 +283,12 @@ PlayState._handleCollisions = function () {
     this.game.physics.arcade.overlap(this.hero, this.coins, this._onHeroVsCoin,
         null, this);
     // hero vs ladder (climb)
-    if (this.game.physics.arcade.overlap(this.hero, this.ladders, this._onHeroVsLadder,
-        null, this))
+    if (this.game.physics.arcade.overlap(this.hero, this.ladders))
     {
-        ladder = true;
+        this.hero.isClimbing = true;
         this.hero.body.allowGravity = false;
     } else {
-        ladder = false;
+        this.hero.isClimbing = false;
         this.hero.body.allowGravity = true;
     }
     // hero vs key (pick up)
@@ -318,7 +317,7 @@ PlayState._handleInput = function () {
         this.hero.move(0);
     }
 
-    if (ladder) {
+    if (this.hero.isClimbing) {
         if (this.keys.up.isDown) {
             this.hero.climb(-1 * speed);
         } else if (this.keys.down.isDown) {
@@ -330,7 +329,7 @@ PlayState._handleInput = function () {
     }
 
     // handle jump
-    const JUMP_HOLD = 200; // ms
+    const JUMP_HOLD = 1; // ms -- 200 originally, changed to "1" as in 
     if (this.keys.space.downDuration(JUMP_HOLD)) {
         let didJump = this.hero.jump();
         if (didJump) { this.sfx.jump.play(); }
@@ -350,10 +349,6 @@ PlayState._onHeroVsCoin = function (hero, coin) {
     this.sfx.coin.play();
     coin.kill();
     this.coinPickupCount++;
-};
-
-PlayState._onHeroVsLadder = function (hero, ladder) {
-  
 };
 
 PlayState._onHeroVsEnemy = function (hero, enemy) {
@@ -459,8 +454,7 @@ PlayState._spawnPlatform = function (platform) {
 };
 
 PlayState._spawnLadder = function (ladder) {
-    let sprite = this.ladders.create(
-        ladder.x, ladder.y, ladder.image);
+    let sprite = this.ladders.create(ladder.x, ladder.y, ladder.image);
 
     // physics (so we can detect overlap with the hero)
     this.game.physics.enable(sprite);
