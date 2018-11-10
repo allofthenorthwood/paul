@@ -383,6 +383,7 @@ PlayState._onHeroVsGriffin = function (hero, griffin) {
         this.hasKey = false;
         this.coinPickupCount++;
         this.bubbles['griffin'].bubble.visible = false;
+        this.key.revive();
     }
 };
 
