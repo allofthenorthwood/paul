@@ -17,7 +17,9 @@ function Hero(game, x, y) {
     this.animations.add('jump', [3]);
     this.animations.add('fall', [4]);
     this.animations.add('die', [5, 6, 5, 6, 5, 6, 5, 6], 12); // 12fps no loop
-    this.animations.add('climb', [7, 8], 8);
+    this.animations.add('climb', [7, 8], 6, true);
+    this.animations.add('ladder', [7]);
+
 
     // starting animation
     this.animations.play('stop');
@@ -104,8 +106,11 @@ Hero.prototype._getAnimationName = function () {
     else if (this.isFrozen) {
         name = 'stop';
     }
-    else if (this.isClimbing) {
+    else if (this.isClimbing && this.body.velocity.y !== 0) {
         name = 'climb';
+    }
+    else if (this.isClimbing) {
+        name = 'ladder';
     }
     else if (this.body.velocity.y < 0) {
         name = 'jump';
@@ -315,10 +320,9 @@ PlayState._handleInput = function (onLadder) {
         this.hero.move(0);
     }
 
-    if (onLadder && this.keys.up.isDown || this.keys.down.isDown) {
-        this.hero.isClimbing = true;
-        this.hero.body.allowGravity = false;
-    }
+    this.hero.isClimbing = onLadder &&
+        (this.hero.isClimbing || this.keys.up.isDown || this.keys.down.isDown)
+    this.hero.body.allowGravity = !this.hero.isClimbing;
 
     if (onLadder && this.hero.isClimbing) {
         if (this.keys.up.isDown) {
@@ -328,9 +332,6 @@ PlayState._handleInput = function (onLadder) {
         } else {
             this.hero.climb(0);
         }
-    } else {
-        this.hero.body.allowGravity = true;
-        this.hero.isClimbing = false;
     }
 
     // handle jump
@@ -346,7 +347,7 @@ PlayState._handleInput = function (onLadder) {
 
 PlayState._onHeroVsKey = function (hero, key) {
     this.sfx.key.play();
-    //key.kill();
+    key.kill();
     this.hasKey = true;
 };
 
@@ -378,11 +379,10 @@ PlayState._onHeroVsEnemy = function (hero, enemy) {
 };
 
 PlayState._onHeroVsGriffin = function (hero, griffin) {
-    console.log('griff')
     if (this.hasKey) {
         this.hasKey = false;
-        console.log('give key to griffin');
         this.coinPickupCount++;
+        this.bubbles['griffin'].bubble.visible = false;
     }
 };
 
@@ -399,6 +399,7 @@ PlayState._goToNextLevel = function () {
 PlayState._loadLevel = function (data) {
     // create all the groups/layers that we need
     this.bgDecoration = this.game.add.group();
+    this.bubbles = {};
     this.platforms = this.game.add.group();
     this.ladders = this.game.add.group();
     this.coins = this.game.add.group();
@@ -425,10 +426,17 @@ PlayState._loadLevel = function (data) {
     this._spawnTable(data.table.x, data.table.y);
     this._spawnTimer(data.timer.x, data.timer.y);
 
+    // spawn goal
+    this._startGoals();
+
     // enable gravity
     const GRAVITY = 1200;
     this.game.physics.arcade.gravity.y = GRAVITY;
 };
+
+PlayState._startGoals = function () {
+    this.bubbles['griffin'].bubble.visible = true;
+}
 
 PlayState._spawnCharacters = function (data) {
     // spawn spiders
@@ -506,14 +514,30 @@ PlayState._spawnKey = function (x, y) {
 PlayState._spawnImage = function (imgName, x, y) {
     const img = this.bgDecoration.create(x, y, imgName);
     img.anchor.setTo(0.5, 1);
-    this.game.physics.enable(img);
-    img.body.allowGravity = false;
     return img;
 };
 PlayState._spawnBoy = function (imgName, x, y) {
     const boy = this._spawnImage(imgName, x, y - 2);
+    this.game.physics.enable(boy);
+    boy.body.allowGravity = false;
+
     this._spawnImage('chair', x, y);
-    this._spawnImage('bubble', x, y - 48);
+
+    const bubble = this.game.add.group();
+    bubble.add(this._spawnImage('bubble', x, y - 48));
+    bubble.add(this._spawnImage('key', x, y - 68));    
+
+    // add a small 'up & down' animation via a tween
+    bubble.y -= 3;
+    this.game.add.tween(bubble)
+        .to({y: bubble.y + 8}, 600, Phaser.Easing.Sinusoidal.InOut)
+        .yoyo(true)
+        .loop()
+        .start();
+
+    bubble.visible = false;
+    this.bubbles[imgName] = {bubble, x, y: y - 48};
+    
     return boy;
 };
 PlayState._spawnTimer = function (x, y) {
