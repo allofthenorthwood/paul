@@ -184,11 +184,11 @@ LoadingState.preload = function () {
     this.game.load.image('background', 'images/background.png');
     this.game.load.image('invisible-wall', 'images/invisible_wall.png');
     this.game.load.image('ground', 'images/ground.png');
-    this.game.load.image('grass:8x1', 'images/grass_8x1.png');
-    this.game.load.image('grass:6x1', 'images/grass_6x1.png');
-    this.game.load.image('grass:4x1', 'images/grass_4x1.png');
-    this.game.load.image('grass:2x1', 'images/grass_2x1.png');
-    this.game.load.image('grass:1x1', 'images/grass_1x1.png');
+    this.game.load.image('platform:8x1', 'images/platform_8x1.png');
+    this.game.load.image('platform:6x1', 'images/platform_6x1.png');
+    this.game.load.image('platform:4x1', 'images/platform_4x1.png');
+    this.game.load.image('platform:2x1', 'images/platform_2x1.png');
+    this.game.load.image('platform:1x1', 'images/platform_1x1.png');
     this.game.load.image('ladder:1x4', 'images/ladder_1x4.png');
     this.game.load.image('key', 'images/key.png');
 
@@ -297,12 +297,9 @@ PlayState._handleCollisions = function () {
     // hero vs key (pick up)
     this.game.physics.arcade.overlap(this.hero, this.key, this._onHeroVsKey,
         null, this);
-    // hero vs table (deliver item)
-    this.game.physics.arcade.overlap(this.hero, this.table, this._onHeroVsTable,
-        // ignore if there is no key or the player is on air
-        function (hero, table) {
-            return this.hasKey && hero.body.touching.down;
-        }, this);
+    // hero vs boy (deliver item)
+    this.game.physics.arcade.overlap(this.hero, this.griffin, this._onHeroVsGriffin,
+        null, this);
     // collision: hero vs enemies (kill or die)
     this.game.physics.arcade.overlap(this.hero, this.spiders,
         this._onHeroVsEnemy, null, this);
@@ -344,7 +341,7 @@ PlayState._handleInput = function () {
 
 PlayState._onHeroVsKey = function (hero, key) {
     this.sfx.key.play();
-    key.kill();
+    //key.kill();
     this.hasKey = true;
 };
 
@@ -375,10 +372,12 @@ PlayState._onHeroVsEnemy = function (hero, enemy) {
     }
 };
 
-PlayState._onHeroVsTable = function (hero, table) {
-    // deliver to the table
-    this.sfx.door.play();
-    // todo: deliver item
+PlayState._onHeroVsGriffin = function (hero, griffin) {
+    if (this.hasKey) {
+        this.hasKey = false;
+        console.log('give key to griffin');
+        this.coinPickupCount++;
+    }
 };
 
 PlayState._goToNextLevel = function () {

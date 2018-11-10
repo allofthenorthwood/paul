@@ -1,18 +1,35 @@
 {
     "platforms": [
-        {"image": "ground", "x": 0, "y": 546},
-        {"image": "grass:6x1", "x": 0, "y": 380},
-        {"image": "grass:8x1", "x": 312, "y": 380},
-        {"image": "grass:6x1", "x": 708, "y": 380}
+        {"image": "ground", "x": 0, "y": 585},
+
+        // Stage level
+        {"image": "platform:6x1", "x": 70, "y": 460},
+        {"image": "platform:8x1", "x": 312, "y": 460},
+        {"image": "platform:6x1", "x": 633, "y": 460},
+        
+        // Catwalk
+        {"image": "platform:6x1", "x": 70, "y": 160},
+        {"image": "platform:8x1", "x": 312, "y": 160},
+        {"image": "platform:6x1", "x": 633, "y": 160},
+
+        // Side rooms
+        {"image": "platform:6x1", "x": 0, "y": 305},
+        {"image": "platform:6x1", "x": 708, "y": 305}
     ],
     "ladders": [
-        {"image": "ladder:1x4", "x": 262, "y": 379},
-        {"image": "ladder:1x4", "x": 656, "y": 379}
+        {"image": "ladder:1x4", "x": 15, "y": 140},
+        {"image": "ladder:1x4", "x": 905, "y": 140},
+
+        {"image": "ladder:1x4", "x": 255, "y": 295},
+        {"image": "ladder:1x4", "x": 663, "y": 295},
+
+        {"image": "ladder:1x4", "x": 15, "y": 420},
+        {"image": "ladder:1x4", "x": 905, "y": 420}
     ],
     "decoration": [],
     "coins": [],
-    "hero": {"x": 21, "y": 525},
+    "hero": {"x": 90, "y": 440},
     "spiders": [],
-    "table": {"x": 480, "y": 380},
-    "key": {"x": 50, "y": 336}
+    "table": {"x": 480, "y": 460},
+    "key": {"x": 50, "y": 440}
 }
