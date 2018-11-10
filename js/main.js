@@ -191,6 +191,7 @@ LoadingState.preload = function () {
     this.game.load.image('platform:1x1', 'images/platform_1x1.png');
     this.game.load.image('ladder:1x4', 'images/ladder_1x4.png');
     this.game.load.image('key', 'images/key.png');
+    this.game.load.image('chair', 'images/chair.png');
 
     this.game.load.spritesheet('decoration', 'images/decor.png', 42, 42);
     this.game.load.spritesheet('hero', 'images/hero.png', 36, 42);
@@ -496,27 +497,23 @@ PlayState._spawnKey = function (x, y) {
         .start();
 };
 
+PlayState._spawnImage = function (img, imgName, x, y) {
+    img = this.bgDecoration.create(x, y, imgName);
+    img.anchor.setTo(0.5, 1);
+    this.game.physics.enable(img);
+    img.body.allowGravity = false;
+};
+PlayState._spawnBoy = function (img, imgName, x, y) {
+    let trash = null;
+    this._spawnImage(img, imgName, x, y - 2);
+    this._spawnImage(x, 'chair', x, y);
+};
+
 PlayState._spawnTable = function (x, y) {
-    this.table = this.bgDecoration.create(x, y, 'table');
-    this.table.anchor.setTo(0.5, 1);
-    this.game.physics.enable(this.table);
-    this.table.body.allowGravity = false;
-
-
-    this.justin = this.bgDecoration.create(x - 50, y, 'justin');
-    this.justin.anchor.setTo(0.5, 1);
-    this.game.physics.enable(this.justin);
-    this.justin.body.allowGravity = false;
-
-    this.travis = this.bgDecoration.create(x, y, 'travis');
-    this.travis.anchor.setTo(0.5, 1);
-    this.game.physics.enable(this.travis);
-    this.travis.body.allowGravity = false;
-
-    this.griffin = this.bgDecoration.create(x + 50, y, 'griffin');
-    this.griffin.anchor.setTo(0.5, 1);
-    this.game.physics.enable(this.griffin);
-    this.griffin.body.allowGravity = false;
+    this._spawnImage(this.table, 'table', x, y);
+    this._spawnBoy(this.justin, 'justin', x - 50, y);
+    this._spawnBoy(this.travis, 'travis', x, y);
+    this._spawnBoy(this.griffin, 'griffin', x + 50, y);
 };
 
 PlayState._createHud = function () {
