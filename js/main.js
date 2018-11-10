@@ -17,6 +17,8 @@ function Hero(game, x, y) {
     this.animations.add('jump', [3]);
     this.animations.add('fall', [4]);
     this.animations.add('die', [5, 6, 5, 6, 5, 6, 5, 6], 12); // 12fps no loop
+    this.animations.add('climb', [7, 8], 8);
+
     // starting animation
     this.animations.play('stop');
 }
@@ -96,19 +98,18 @@ Hero.prototype.die = function () {
 Hero.prototype._getAnimationName = function () {
     let name = 'stop'; // default animation
 
-    // dying
     if (!this.alive) {
         name = 'die';
     }
-    // frozen & not dying
     else if (this.isFrozen) {
         name = 'stop';
     }
-    // jumping
+    else if (this.isClimbing) {
+        name = 'climb';
+    }
     else if (this.body.velocity.y < 0) {
         name = 'jump';
     }
-    // falling
     else if (this.body.velocity.y >= 0 && !this.body.touching.down) {
         name = 'fall';
     }
@@ -192,15 +193,17 @@ LoadingState.preload = function () {
     this.game.load.image('ladder:1x4', 'images/ladder_1x4.png');
     this.game.load.image('key', 'images/key.png');
     this.game.load.image('chair', 'images/chair.png');
+    this.game.load.image('timer', 'images/timer.png');
+    this.game.load.image('table', 'images/table.png');
+    this.game.load.image('justin', 'images/justin.png');
+    this.game.load.image('travis', 'images/travis.png');
+    this.game.load.image('griffin', 'images/griffin.png');
+    this.game.load.image('bubble', 'images/bubble.png');
 
     this.game.load.spritesheet('decoration', 'images/decor.png', 42, 42);
     this.game.load.spritesheet('hero', 'images/hero.png', 36, 42);
     this.game.load.spritesheet('coin', 'images/coin_animated.png', 22, 22);
     this.game.load.spritesheet('spider', 'images/spider.png', 42, 32);
-    this.game.load.spritesheet('table', 'images/table.png', 22, 66);
-    this.game.load.spritesheet('justin', 'images/justin.png', 42, 32);
-    this.game.load.spritesheet('travis', 'images/travis.png', 42, 32);
-    this.game.load.spritesheet('griffin', 'images/griffin.png', 42, 32);
     this.game.load.spritesheet('icon:key', 'images/key_icon.png', 34, 30);
 
     this.game.load.audio('sfx:jump', 'audio/jump.wav');
@@ -265,8 +268,8 @@ PlayState.create = function () {
 };
 
 PlayState.update = function () {
-    this._handleCollisions();
-    this._handleInput();
+    const {onLadder} = this._handleCollisions();
+    this._handleInput(onLadder);
 
     // update scoreboards
     this.coinFont.text = `x${this.coinPickupCount}`;
@@ -287,14 +290,7 @@ PlayState._handleCollisions = function () {
     this.game.physics.arcade.overlap(this.hero, this.coins, this._onHeroVsCoin,
         null, this);
     // hero vs ladder (climb)
-    if (this.game.physics.arcade.overlap(this.hero, this.ladders))
-    {
-        this.hero.isClimbing = true;
-        this.hero.body.allowGravity = false;
-    } else {
-        this.hero.isClimbing = false;
-        this.hero.body.allowGravity = true;
-    }
+    const onLadder = this.game.physics.arcade.overlap(this.hero, this.ladders);
     // hero vs key (pick up)
     this.game.physics.arcade.overlap(this.hero, this.key, this._onHeroVsKey,
         null, this);
@@ -304,9 +300,10 @@ PlayState._handleCollisions = function () {
     // collision: hero vs enemies (kill or die)
     this.game.physics.arcade.overlap(this.hero, this.spiders,
         this._onHeroVsEnemy, null, this);
+    return {onLadder};
 };
 
-PlayState._handleInput = function () {
+PlayState._handleInput = function (onLadder) {
     const speed = this.keys.x.isDown ? 2 : 1;
     if (this.keys.left.isDown) { // move hero left
         this.hero.move(-1 * speed);
@@ -318,7 +315,12 @@ PlayState._handleInput = function () {
         this.hero.move(0);
     }
 
-    if (this.hero.isClimbing) {
+    if (onLadder && this.keys.up.isDown || this.keys.down.isDown) {
+        this.hero.isClimbing = true;
+        this.hero.body.allowGravity = false;
+    }
+
+    if (onLadder && this.hero.isClimbing) {
         if (this.keys.up.isDown) {
             this.hero.climb(-1 * speed);
         } else if (this.keys.down.isDown) {
@@ -326,7 +328,9 @@ PlayState._handleInput = function () {
         } else {
             this.hero.climb(0);
         }
-
+    } else {
+        this.hero.body.allowGravity = true;
+        this.hero.isClimbing = false;
     }
 
     // handle jump
@@ -374,6 +378,7 @@ PlayState._onHeroVsEnemy = function (hero, enemy) {
 };
 
 PlayState._onHeroVsGriffin = function (hero, griffin) {
+    console.log('griff')
     if (this.hasKey) {
         this.hasKey = false;
         console.log('give key to griffin');
@@ -418,6 +423,7 @@ PlayState._loadLevel = function (data) {
     data.coins.forEach(this._spawnCoin, this);
     this._spawnKey(data.key.x, data.key.y);
     this._spawnTable(data.table.x, data.table.y);
+    this._spawnTimer(data.timer.x, data.timer.y);
 
     // enable gravity
     const GRAVITY = 1200;
@@ -497,23 +503,28 @@ PlayState._spawnKey = function (x, y) {
         .start();
 };
 
-PlayState._spawnImage = function (img, imgName, x, y) {
-    img = this.bgDecoration.create(x, y, imgName);
+PlayState._spawnImage = function (imgName, x, y) {
+    const img = this.bgDecoration.create(x, y, imgName);
     img.anchor.setTo(0.5, 1);
     this.game.physics.enable(img);
     img.body.allowGravity = false;
+    return img;
 };
-PlayState._spawnBoy = function (img, imgName, x, y) {
-    let trash = null;
-    this._spawnImage(img, imgName, x, y - 2);
-    this._spawnImage(x, 'chair', x, y);
+PlayState._spawnBoy = function (imgName, x, y) {
+    const boy = this._spawnImage(imgName, x, y - 2);
+    this._spawnImage('chair', x, y);
+    this._spawnImage('bubble', x, y - 48);
+    return boy;
+};
+PlayState._spawnTimer = function (x, y) {
+    this.timer = this._spawnImage('timer', x, y);
 };
 
 PlayState._spawnTable = function (x, y) {
-    this._spawnImage(this.table, 'table', x, y);
-    this._spawnBoy(this.justin, 'justin', x - 50, y);
-    this._spawnBoy(this.travis, 'travis', x, y);
-    this._spawnBoy(this.griffin, 'griffin', x + 50, y);
+    this.table = this._spawnImage('table', x, y);
+    this.justin = this._spawnBoy('justin', x - 50, y);
+    this.travis = this._spawnBoy('travis', x, y);
+    this.griffin = this._spawnBoy('griffin', x + 50, y);
 };
 
 PlayState._createHud = function () {
