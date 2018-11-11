@@ -187,7 +187,6 @@ LoadingState.preload = function () {
     this.game.load.image('font:numbers', 'images/numbers.png');
 
     this.game.load.image('icon:coin', 'images/coin_icon.png');
-    this.game.load.image('icon:default', 'images/default_icon.png');
     this.game.load.image('background', 'images/background.png');
     this.game.load.image('invisible-wall', 'images/invisible_wall.png');
     this.game.load.image('ground', 'images/ground.png');
@@ -200,7 +199,7 @@ LoadingState.preload = function () {
     this.game.load.image('key', 'images/key.png');
     this.game.load.image('darkness', 'images/darkness.png');
     this.game.load.image('chair', 'images/chair.png');
-    this.game.load.image('timer', 'images/timer.png');
+    this.game.load.image('generator', 'images/generator.png');
     this.game.load.image('table', 'images/table.png');
     this.game.load.image('justin', 'images/justin.png');
     this.game.load.image('travis', 'images/travis.png');
@@ -210,6 +209,7 @@ LoadingState.preload = function () {
     this.game.load.spritesheet('decoration', 'images/decor.png', 42, 42);
     this.game.load.spritesheet('hero', 'images/hero.png', 36, 42);
     this.game.load.spritesheet('coin', 'images/coin_animated.png', 22, 22);
+    this.game.load.spritesheet('timer', 'images/timer.png', 38, 18);
     this.game.load.spritesheet('spider', 'images/spider.png', 42, 32);
     this.game.load.spritesheet('icon:key', 'images/key_icon.png', 34, 30);
 
@@ -277,14 +277,27 @@ PlayState.create = function () {
     // create UI score boards
     this._createHud();
 
-    this.keys.one.onUp.add(() => this.lightsOut());
+    this.keys.one.onUp.add(() => this._lightsOut());
+    this.keys.two.onUp.add(() => this._timerFall());
 };
 
-PlayState.lightsOut = function () {
+PlayState._lightsOut = function () {
     this.dark = true;
 };
-PlayState.lightsOn = function () {
+PlayState._lightsOn = function () {
     this.dark = false;
+};
+PlayState._timerFall = function () {
+    if (!this.timerDown) {
+        this.timerDown = true;
+        this.timer.animations.play('down');
+    }
+};
+PlayState._timerFix = function () {
+    if (this.timerDown) {
+        this.timerDown = false;
+        this.timer.animations.play('up');
+    }
 };
 
 PlayState.update = function () {
@@ -327,6 +340,11 @@ PlayState._handleCollisions = function () {
         null, this);
     // hero vs boy (deliver item)
     this.game.physics.arcade.overlap(this.hero, this.griffin, this._onHeroVsGriffin,
+        null, this);
+    //
+    this.game.physics.arcade.overlap(this.hero, this.generator, this._lightsOn,
+        null, this);
+    this.game.physics.arcade.overlap(this.hero, this.timer, this._timerFix,
         null, this);
     // collision: hero vs enemies (kill or die)
     this.game.physics.arcade.overlap(this.hero, this.spiders,
@@ -454,6 +472,7 @@ PlayState._loadLevel = function (data) {
     this._spawnKey(data.key.x, data.key.y);
     this._spawnTable(data.table.x, data.table.y);
     this._spawnTimer(data.timer.x, data.timer.y);
+    this._spawnGenerator(data.generator.x, data.generator.y);
 
     // 
     this._spawnDarkness(data.hero.x, data.hero.y);
@@ -577,7 +596,17 @@ PlayState._spawnBoy = function (imgName, x, y) {
     return boy;
 };
 PlayState._spawnTimer = function (x, y) {
-    this.timer = this._spawnImage('timer', x, y);
+    const sprite = this._spawnImage('timer', x, y);
+    this.game.physics.enable(sprite);
+    sprite.body.allowGravity = false;
+    sprite.animations.add('up', [0], 6, true);
+    sprite.animations.add('down', [1], 6, true);
+    this.timer = sprite;
+};
+PlayState._spawnGenerator = function (x, y) {
+    this.generator = this._spawnImage('generator', x, y);
+    this.game.physics.enable(this.generator);
+    this.generator.body.allowGravity = false;
 };
 
 PlayState._spawnTable = function (x, y) {
