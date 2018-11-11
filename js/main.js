@@ -187,6 +187,7 @@ LoadingState.preload = function () {
     this.game.load.image('font:numbers', 'images/numbers.png');
 
     this.game.load.image('icon:coin', 'images/coin_icon.png');
+    this.game.load.image('icon:default', 'images/default_icon.png');
     this.game.load.image('background', 'images/background.png');
     this.game.load.image('invisible-wall', 'images/invisible_wall.png');
     this.game.load.image('ground', 'images/ground.png');
@@ -197,6 +198,7 @@ LoadingState.preload = function () {
     this.game.load.image('platform:1x1', 'images/platform_1x1.png');
     this.game.load.image('ladder:1x4', 'images/ladder_1x4.png');
     this.game.load.image('key', 'images/key.png');
+    this.game.load.image('darkness', 'images/darkness.png');
     this.game.load.image('chair', 'images/chair.png');
     this.game.load.image('timer', 'images/timer.png');
     this.game.load.image('table', 'images/table.png');
@@ -233,6 +235,10 @@ const LEVEL_COUNT = 2;
 
 PlayState.init = function (data) {
     this.keys = this.game.input.keyboard.addKeys({
+        one: Phaser.KeyCode.ONE,
+        two: Phaser.KeyCode.TWO,
+        three: Phaser.KeyCode.THREE,
+
         x: Phaser.KeyCode.X,
         left: Phaser.KeyCode.LEFT,
         right: Phaser.KeyCode.RIGHT,
@@ -270,15 +276,35 @@ PlayState.create = function () {
 
     // create UI score boards
     this._createHud();
+
+    this.keys.one.onUp.add(() => this.lightsOut());
+};
+
+PlayState.lightsOut = function () {
+    this.dark = true;
+};
+PlayState.lightsOn = function () {
+    this.dark = false;
 };
 
 PlayState.update = function () {
     const {onLadder} = this._handleCollisions();
     this._handleInput(onLadder);
 
+    // update darkness
+    if (!this.dark) {
+        this.darkness.visible = false;
+    }
+    else {
+        this.darkness.visible = true;
+        this.darkness.x = this.hero.x;
+        this.darkness.y = this.hero.y;
+    }
+
     // update scoreboards
     this.coinFont.text = `x${this.coinPickupCount}`;
-    this.mousePosFont.text = `${this.game.input.activePointer.x} ${this.game.input.activePointer.y}`;
+    this.mousePosFont.text = `${Math.floor(this.game.input.activePointer.x)}` +
+        ` ${Math.floor(this.game.input.activePointer.y)}`;
     this.keyIcon.frame = this.hasKey ? 1 : 0;
 };
 
@@ -382,7 +408,7 @@ PlayState._onHeroVsGriffin = function (hero, griffin) {
     if (this.hasKey) {
         this.hasKey = false;
         this.coinPickupCount++;
-        this.bubbles['griffin'].bubble.visible = false;
+        this.bubbleIndex['griffin'].bubble.visible = false;
         this.key.revive();
     }
 };
@@ -400,13 +426,15 @@ PlayState._goToNextLevel = function () {
 PlayState._loadLevel = function (data) {
     // create all the groups/layers that we need
     this.bgDecoration = this.game.add.group();
-    this.bubbles = {};
+    this.bubbles = this.game.add.group();
+    this.bubbleIndex = {};
     this.platforms = this.game.add.group();
     this.ladders = this.game.add.group();
     this.coins = this.game.add.group();
     this.spiders = this.game.add.group();
     this.enemyWalls = this.game.add.group();
     this.enemyWalls.visible = false;
+    this.overlays = this.game.add.group();
 
     // spawn hero and enemies
     this._spawnCharacters({hero: data.hero, spiders: data.spiders});
@@ -427,6 +455,9 @@ PlayState._loadLevel = function (data) {
     this._spawnTable(data.table.x, data.table.y);
     this._spawnTimer(data.timer.x, data.timer.y);
 
+    // 
+    this._spawnDarkness(data.hero.x, data.hero.y);
+
     // spawn goal
     this._startGoals();
 
@@ -436,7 +467,7 @@ PlayState._loadLevel = function (data) {
 };
 
 PlayState._startGoals = function () {
-    this.bubbles['griffin'].bubble.visible = true;
+    this.bubbleIndex['griffin'].bubble.visible = true;
 }
 
 PlayState._spawnCharacters = function (data) {
@@ -511,6 +542,10 @@ PlayState._spawnKey = function (x, y) {
         .loop()
         .start();
 };
+PlayState._spawnDarkness = function (x, y) {
+    this.darkness = this.overlays.create(x, y, 'darkness');
+    this.darkness.anchor.set(0.5, 0.5);
+};
 
 PlayState._spawnImage = function (imgName, x, y) {
     const img = this.bgDecoration.create(x, y, imgName);
@@ -524,7 +559,7 @@ PlayState._spawnBoy = function (imgName, x, y) {
 
     this._spawnImage('chair', x, y);
 
-    const bubble = this.game.add.group();
+    const bubble = this.game.add.group(this.bubbles);
     bubble.add(this._spawnImage('bubble', x, y - 48));
     bubble.add(this._spawnImage('key', x, y - 68));    
 
@@ -537,7 +572,7 @@ PlayState._spawnBoy = function (imgName, x, y) {
         .start();
 
     bubble.visible = false;
-    this.bubbles[imgName] = {bubble, x, y: y - 48};
+    this.bubbleIndex[imgName] = {bubble, x, y: y - 48};
     
     return boy;
 };
@@ -562,13 +597,12 @@ PlayState._createHud = function () {
     this.keyIcon = this.game.make.image(0, 19, 'icon:key');
     this.keyIcon.anchor.set(0, 0.5);
 
-    let coinIcon = this.game.make.image(this.keyIcon.width + 7, 0, 'icon:coin');
-    let coinScoreImg = this.game.make.image(coinIcon.x + coinIcon.width,
+    const coinIcon = this.game.make.image(this.keyIcon.width + 7, 0, 'icon:coin');
+    const coinScoreImg = this.game.make.image(coinIcon.x + coinIcon.width,
         coinIcon.height / 2, this.coinFont);
     coinScoreImg.anchor.set(0, 0.5);
 
-    let mousePosImg = this.game.make.image(200,
-        coinIcon.height / 2, this.mousePosFont);
+    const mousePosImg = this.game.make.image(200, coinIcon.height / 2,  this.mousePosFont);
     mousePosImg.anchor.set(0, 0.5);
 
     this.hud = this.game.add.group();
