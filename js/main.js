@@ -198,6 +198,7 @@ LoadingState.preload = function () {
     this.game.load.image('ladder:1x4', 'images/ladder_1x4.png');
     this.game.load.image('key', 'images/key.png');
     this.game.load.image('darkness', 'images/darkness.png');
+    this.game.load.image('darkness_stage', 'images/darkness_stage.png');
     this.game.load.image('chair', 'images/chair.png');
     this.game.load.image('generator', 'images/generator.png');
     this.game.load.image('table', 'images/table.png');
@@ -208,6 +209,7 @@ LoadingState.preload = function () {
 
     this.game.load.spritesheet('decoration', 'images/decor.png', 42, 42);
     this.game.load.spritesheet('hero', 'images/hero.png', 36, 42);
+    this.game.load.spritesheet('spotlight', 'images/spotlight.png', 40, 40);
     this.game.load.spritesheet('coin', 'images/coin_animated.png', 22, 22);
     this.game.load.spritesheet('timer', 'images/timer.png', 38, 18);
     this.game.load.spritesheet('spider', 'images/spider.png', 42, 32);
@@ -279,6 +281,7 @@ PlayState.create = function () {
 
     this.keys.one.onUp.add(() => this._lightsOut());
     this.keys.two.onUp.add(() => this._timerFall());
+    this.keys.three.onUp.add(() => this._spotlightsOff());
 };
 
 PlayState._lightsOut = function () {
@@ -286,6 +289,18 @@ PlayState._lightsOut = function () {
 };
 PlayState._lightsOn = function () {
     this.dark = false;
+};
+PlayState._spotlightsOff = function () {
+    this.stageDarkness.visible = true;
+    this.spotlights.children.forEach((child) => {
+        child.animations.play('off');
+    });
+};
+PlayState._spotlightsOn = function () {
+    this.stageDarkness.visible = false;
+    this.spotlights.children.forEach((child) => {
+        child.animations.play('on');
+    });
 };
 PlayState._timerFall = function () {
     if (!this.timerDown) {
@@ -345,6 +360,8 @@ PlayState._handleCollisions = function () {
     this.game.physics.arcade.overlap(this.hero, this.generator, this._lightsOn,
         null, this);
     this.game.physics.arcade.overlap(this.hero, this.timer, this._timerFix,
+        null, this);
+    this.game.physics.arcade.overlap(this.hero, this.spotlights, this._spotlightsOn,
         null, this);
     // collision: hero vs enemies (kill or die)
     this.game.physics.arcade.overlap(this.hero, this.spiders,
@@ -444,8 +461,6 @@ PlayState._goToNextLevel = function () {
 PlayState._loadLevel = function (data) {
     // create all the groups/layers that we need
     this.bgDecoration = this.game.add.group();
-    this.bubbles = this.game.add.group();
-    this.bubbleIndex = {};
     this.platforms = this.game.add.group();
     this.ladders = this.game.add.group();
     this.coins = this.game.add.group();
@@ -453,6 +468,8 @@ PlayState._loadLevel = function (data) {
     this.enemyWalls = this.game.add.group();
     this.enemyWalls.visible = false;
     this.overlays = this.game.add.group();
+    this.bubbles = this.game.add.group();
+    this.bubbleIndex = {};
 
     // spawn hero and enemies
     this._spawnCharacters({hero: data.hero, spiders: data.spiders});
@@ -462,6 +479,8 @@ PlayState._loadLevel = function (data) {
         this.bgDecoration.add(
             this.game.add.image(deco.x, deco.y, 'decoration', deco.frame));
     }, this);
+
+    this.spotlights = this.game.add.group();
 
     // spawn platforms
     data.platforms.forEach(this._spawnPlatform, this);
@@ -473,9 +492,11 @@ PlayState._loadLevel = function (data) {
     this._spawnTable(data.table.x, data.table.y);
     this._spawnTimer(data.timer.x, data.timer.y);
     this._spawnGenerator(data.generator.x, data.generator.y);
+    this._spawnSpotlights(data.spotlights.x, data.spotlights.y);
 
     // 
     this._spawnDarkness(data.hero.x, data.hero.y);
+    this._spawnStageDarkness(data.stage.x, data.stage.y);
 
     // spawn goal
     this._startGoals();
@@ -565,6 +586,10 @@ PlayState._spawnDarkness = function (x, y) {
     this.darkness = this.overlays.create(x, y, 'darkness');
     this.darkness.anchor.set(0.5, 0.5);
 };
+PlayState._spawnStageDarkness = function (x, y) {
+    this.stageDarkness = this.bgDecoration.create(x, y, 'darkness_stage');
+    this.stageDarkness.visible = false;
+};
 
 PlayState._spawnImage = function (imgName, x, y) {
     const img = this.bgDecoration.create(x, y, imgName);
@@ -607,6 +632,20 @@ PlayState._spawnGenerator = function (x, y) {
     this.generator = this._spawnImage('generator', x, y);
     this.game.physics.enable(this.generator);
     this.generator.body.allowGravity = false;
+};
+PlayState._spawnSpotlights = function (x, y) {
+    this._spawnSpotlight(x - 80, y);
+    this._spawnSpotlight(x, y);
+    this._spawnSpotlight(x + 80, y);
+};
+PlayState._spawnSpotlight = function (x, y) {
+    const sprite = this._spawnImage('spotlight', x, y);
+    sprite.anchor.set(0.5, 0.5)
+    this.game.physics.enable(sprite);
+    sprite.body.allowGravity = false;
+    sprite.animations.add('on', [0], 6, true);
+    sprite.animations.add('off', [1], 6, true);
+    this.spotlights.add(sprite);
 };
 
 PlayState._spawnTable = function (x, y) {
