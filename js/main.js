@@ -188,6 +188,12 @@ LoadingState.preload = function () {
 
     this.game.load.image('icon:coin', 'images/coin_icon.png');
     this.game.load.image('background', 'images/background.png');
+    this.game.load.image('background_title', 'images/background_title.png');
+    this.game.load.image('title', 'images/title.png');
+    this.game.load.image('level_1', 'images/level_1.png');
+    this.game.load.image('level_2', 'images/level_2.png');
+    this.game.load.image('level_3', 'images/level_3.png');
+    this.game.load.image('level_indicator', 'images/level_indicator.png');
     this.game.load.image('invisible-wall', 'images/invisible_wall.png');
     this.game.load.image('ground', 'images/ground.png');
     this.game.load.image('platform:8x1', 'images/platform_8x1.png');
@@ -224,7 +230,67 @@ LoadingState.preload = function () {
 };
 
 LoadingState.create = function () {
-    this.game.state.start('play', true, false, {level: 0});
+    this.game.state.start('title', true, false, {level: 0});
+};
+
+// =============================================================================
+// Title Screen
+// =============================================================================
+
+TitleState = {};
+
+TitleState.init = function () {
+    console.log('title screen')
+};
+
+TitleState.create = function () {
+    this.keys = this.game.input.keyboard.addKeys({
+        up: Phaser.KeyCode.UP,
+        down: Phaser.KeyCode.DOWN,
+        enter: Phaser.KeyCode.ENTER,
+    });
+
+    this.keys.down.onUp.add(() => this._updateSelectedOption(1));
+    this.keys.up.onUp.add(() => this._updateSelectedOption(-1));
+    this.keys.enter.onUp.add(() => this._startGame());
+
+    this.game.add.image(0, 0, 'background_title');
+    this.game.add.image(100, 100, 'title');
+
+    this.options = this.game.add.group();
+    const level_1 = this.game.make.image(50, 0, 'level_1');
+    const level_2 = this.game.make.image(50, 100, 'level_2');
+    const level_3 = this.game.make.image(50, 200, 'level_3');
+    
+    this.optionSelected = 0;
+    this.level_indicator = this.game.make.image(0, this.optionSelected * 100,
+        'level_indicator');
+
+    this.options.add(level_1);
+    this.options.add(level_2);
+    this.options.add(level_3);
+    this.options.add(this.level_indicator);
+    this.options.position.set(this.game.width - 400, 300);
+};
+TitleState._startGame = function () {
+    const level = 0; // TODO: this.optionSelected
+    this.game.state.start('play', true, false, {level});
+};
+
+TitleState._updateSelectedOption = function (direction) {
+    this.optionSelected += direction;
+    if (this.optionSelected < 0) {
+        this.optionSelected = 0;
+    }
+    if (this.optionSelected > 2) {
+        this.optionSelected = 2;
+    }
+    this.level_indicator.position.set(0, this.optionSelected * 100);
+    console.log(this.optionSelected)
+}
+
+TitleState.update = function () {
+
 };
 
 // =============================================================================
@@ -333,6 +399,8 @@ PlayState.update = function () {
     this.coinFont.text = `x${this.coinPickupCount}`;
     this.mousePosFont.text = `${Math.floor(this.game.input.activePointer.x)}` +
         ` ${Math.floor(this.game.input.activePointer.y)}`;
+    this.levelFont.text = `${this.level + 1}`;
+
     this.keyIcon.frame = this.hasKey ? 1 : 0;
 };
 
@@ -661,6 +729,8 @@ PlayState._createHud = function () {
         NUMBERS_STR, 6);
     this.mousePosFont = this.game.add.retroFont('font:numbers', 20, 26,
         NUMBERS_STR, 6);
+    this.levelFont = this.game.add.retroFont('font:numbers', 20, 26,
+        NUMBERS_STR, 6);
 
     this.keyIcon = this.game.make.image(0, 19, 'icon:key');
     this.keyIcon.anchor.set(0, 0.5);
@@ -673,10 +743,14 @@ PlayState._createHud = function () {
     const mousePosImg = this.game.make.image(200, coinIcon.height / 2,  this.mousePosFont);
     mousePosImg.anchor.set(0, 0.5);
 
+    const levelImg = this.game.make.image(800, coinIcon.height / 2,  this.levelFont);
+    levelImg.anchor.set(0, 0.5);
+
     this.hud = this.game.add.group();
     this.hud.add(coinIcon);
     this.hud.add(coinScoreImg);
     this.hud.add(mousePosImg);
+    this.hud.add(levelImg);
     this.hud.add(this.keyIcon);
     this.hud.position.set(10, 10);
 };
@@ -688,6 +762,7 @@ PlayState._createHud = function () {
 window.onload = function () {
     let game = new Phaser.Game(960, 600, Phaser.AUTO, 'game');
     game.state.add('play', PlayState);
+    game.state.add('title', TitleState);
     game.state.add('loading', LoadingState);
     game.state.start('loading');
 };
