@@ -216,7 +216,8 @@ LoadingState.preload = function () {
 
     this.game.load.spritesheet('decoration', 'images/decor.png', 42, 42);
     this.game.load.spritesheet('hero', 'images/hero.png', 38, 48);
-    this.game.load.spritesheet('spotlight', 'images/spotlight.png', 40, 40);
+    this.game.load.spritesheet('spotlights', 'images/spotlights.png', 270, 74);
+    this.game.load.spritesheet('stage:lighting', 'images/stage_lighting.png', 338, 294);
     this.game.load.spritesheet('coin', 'images/coin_animated.png', 22, 22);
     this.game.load.spritesheet('timer', 'images/timer.png', 38, 18);
     this.game.load.spritesheet('spider', 'images/spider.png', 42, 32);
@@ -360,15 +361,13 @@ PlayState._lightsOn = function () {
 };
 PlayState._spotlightsOff = function () {
     this.stageDarkness.visible = true;
-    this.spotlights.children.forEach((child) => {
-        child.animations.play('off');
-    });
+    this.stageLighting.visible = false;
+    this.spotlights.animations.play('off');
 };
 PlayState._spotlightsOn = function () {
     this.stageDarkness.visible = false;
-    this.spotlights.children.forEach((child) => {
-        child.animations.play('on');
-    });
+    this.stageLighting.visible = true;
+    this.spotlights.animations.play('on');
 };
 PlayState._timerFall = function () {
     if (!this.timerDown) {
@@ -537,7 +536,6 @@ PlayState._loadLevel = function (data) {
     this.spiders = this.game.add.group();
     this.enemyWalls = this.game.add.group();
     this.enemyWalls.visible = false;
-    this.overlays = this.game.add.group();
     this.bubbles = this.game.add.group();
     this.bubbleIndex = {};
 
@@ -550,8 +548,8 @@ PlayState._loadLevel = function (data) {
             this.game.add.image(deco.x, deco.y, 'decoration', deco.frame));
     }, this);
 
-    this.spotlights = this.game.add.group();
-
+    this.overlays = this.game.add.group();
+    
     // spawn platforms
     data.platforms.forEach(this._spawnPlatform, this);
 
@@ -709,18 +707,17 @@ PlayState._spawnGenerator = function (x, y) {
     this.generator.body.allowGravity = false;
 };
 PlayState._spawnSpotlights = function (x, y) {
-    this._spawnSpotlight(x - 80, y);
-    this._spawnSpotlight(x, y);
-    this._spawnSpotlight(x + 80, y);
-};
-PlayState._spawnSpotlight = function (x, y) {
-    const sprite = this._spawnImage('spotlight', x, y);
+    const sprite = this.overlays.create(x, y, 'spotlights');
+    sprite.anchor.set(0.5, 0.5);
     sprite.anchor.set(0.5, 0.5)
     this.game.physics.enable(sprite);
     sprite.body.allowGravity = false;
     sprite.animations.add('on', [0], 6, true);
     sprite.animations.add('off', [1], 6, true);
-    this.spotlights.add(sprite);
+    this.spotlights = sprite;
+
+    this.stageLighting = this.overlays.create(x, y, 'stage:lighting');
+    this.stageLighting.anchor.set(0.5, 0);
 };
 
 PlayState._spawnTable = function (x, y) {
