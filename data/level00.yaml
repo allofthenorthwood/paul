@@ -1,27 +1,23 @@
 {
     "platforms": [
-        {"image": "ground", "x": 0, "y": 585},
+        {"image": "ground", "x": 0, "y": 588},
 
         // Stage level
-        {"image": "platform:6x1", "x": 70, "y": 460},
-        {"image": "platform:8x1", "x": 312, "y": 460},
-        {"image": "platform:6x1", "x": 633, "y": 460},
+        {"image": "platform:full", "x": 70, "y": 470},
         
         // Catwalk
-        {"image": "platform:6x1", "x": 70, "y": 160},
-        {"image": "platform:8x1", "x": 312, "y": 160},
-        {"image": "platform:6x1", "x": 633, "y": 160},
+        {"image": "platform:full", "x": 70, "y": 166},
 
         // Side rooms
-        {"image": "platform:6x1", "x": 0, "y": 305},
-        {"image": "platform:6x1", "x": 708, "y": 305}
+        {"image": "platform:side", "x": 0, "y": 314},
+        {"image": "platform:side", "x": 720, "y": 314}
     ],
     "ladders": [
-        {"image": "ladder:1x4", "x": 15, "y": 140},
-        {"image": "ladder:1x4", "x": 905, "y": 140},
+        {"image": "ladder:1x4", "x": 15, "y": 146},
+        {"image": "ladder:1x4", "x": 905, "y": 146},
 
-        {"image": "ladder:1x4", "x": 255, "y": 295},
-        {"image": "ladder:1x4", "x": 663, "y": 295},
+        {"image": "ladder:1x4", "x": 255, "y": 302},
+        {"image": "ladder:1x4", "x": 663, "y": 302},
 
         {"image": "ladder:1x4", "x": 15, "y": 420},
         {"image": "ladder:1x4", "x": 905, "y": 420}
@@ -30,9 +26,9 @@
     "coins": [],
     "hero": {"x": 170, "y": 440},
     "spiders": [],
-    "table": {"x": 500, "y": 460},
-    "timer": {"x": 360, "y": 460},
-    "generator": {"x": 480, "y": 585},
+    "table": {"x": 500, "y": 465},
+    "timer": {"x": 380, "y": 460},
+    "generator": {"x": 480, "y": 588},
     "spotlights": {"x": 480, "y": 170},
     "stage": {"x": 309, "y": 170},
     "key": {"x": 100, "y": 440}

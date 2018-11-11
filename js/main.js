@@ -196,25 +196,26 @@ LoadingState.preload = function () {
     this.game.load.image('level_indicator', 'images/level_indicator.png');
     this.game.load.image('invisible-wall', 'images/invisible_wall.png');
     this.game.load.image('ground', 'images/ground.png');
-    this.game.load.image('platform:8x1', 'images/platform_8x1.png');
-    this.game.load.image('platform:6x1', 'images/platform_6x1.png');
-    this.game.load.image('platform:4x1', 'images/platform_4x1.png');
-    this.game.load.image('platform:2x1', 'images/platform_2x1.png');
-    this.game.load.image('platform:1x1', 'images/platform_1x1.png');
+    this.game.load.image('platform:full', 'images/platform_full.png');
+    this.game.load.image('platform:side', 'images/platform_side.png');
     this.game.load.image('ladder:1x4', 'images/ladder_1x4.png');
     this.game.load.image('key', 'images/key.png');
     this.game.load.image('darkness', 'images/darkness.png');
     this.game.load.image('darkness_stage', 'images/darkness_stage.png');
-    this.game.load.image('chair', 'images/chair.png');
+    this.game.load.image('chair_justin', 'images/chair_justin.png');
+    this.game.load.image('chair_travis', 'images/chair_travis.png');
+    this.game.load.image('chair_griffin', 'images/chair_griffin.png');
     this.game.load.image('generator', 'images/generator.png');
     this.game.load.image('table', 'images/table.png');
     this.game.load.image('justin', 'images/justin.png');
     this.game.load.image('travis', 'images/travis.png');
     this.game.load.image('griffin', 'images/griffin.png');
     this.game.load.image('bubble', 'images/bubble.png');
+    this.game.load.image('crowd', 'images/crowd.png');
+    this.game.load.image('stage', 'images/stage.png');
 
     this.game.load.spritesheet('decoration', 'images/decor.png', 42, 42);
-    this.game.load.spritesheet('hero', 'images/hero.png', 36, 42);
+    this.game.load.spritesheet('hero', 'images/hero.png', 38, 48);
     this.game.load.spritesheet('spotlight', 'images/spotlight.png', 40, 40);
     this.game.load.spritesheet('coin', 'images/coin_animated.png', 22, 22);
     this.game.load.spritesheet('timer', 'images/timer.png', 38, 18);
@@ -230,7 +231,8 @@ LoadingState.preload = function () {
 };
 
 LoadingState.create = function () {
-    this.game.state.start('title', true, false, {level: 0});
+    // TODO: switch back to title
+    this.game.state.start('play', true, false, {level: 0});
 };
 
 // =============================================================================
@@ -556,6 +558,7 @@ PlayState._loadLevel = function (data) {
     // spawn important objects
     data.ladders.forEach(this._spawnLadder, this);
     data.coins.forEach(this._spawnCoin, this);
+    this._spawnStage(data.stage.x, data.stage.y);
     this._spawnKey(data.key.x, data.key.y);
     this._spawnTable(data.table.x, data.table.y);
     this._spawnTimer(data.timer.x, data.timer.y);
@@ -563,8 +566,8 @@ PlayState._loadLevel = function (data) {
     this._spawnSpotlights(data.spotlights.x, data.spotlights.y);
 
     // 
-    this._spawnDarkness(data.hero.x, data.hero.y);
     this._spawnStageDarkness(data.stage.x, data.stage.y);
+    this._spawnDarkness(data.hero.x, data.hero.y);
 
     // spawn goal
     this._startGoals();
@@ -654,6 +657,10 @@ PlayState._spawnDarkness = function (x, y) {
     this.darkness = this.overlays.create(x, y, 'darkness');
     this.darkness.anchor.set(0.5, 0.5);
 };
+PlayState._spawnStage = function (x, y) {
+    this.bgDecoration.create(x, y, 'crowd');
+    this.bgDecoration.create(x, y, 'stage');
+};
 PlayState._spawnStageDarkness = function (x, y) {
     this.stageDarkness = this.bgDecoration.create(x, y, 'darkness_stage');
     this.stageDarkness.visible = false;
@@ -665,15 +672,15 @@ PlayState._spawnImage = function (imgName, x, y) {
     return img;
 };
 PlayState._spawnBoy = function (imgName, x, y) {
-    const boy = this._spawnImage(imgName, x, y - 2);
+    const boy = this._spawnImage(imgName, x, y - 4);
     this.game.physics.enable(boy);
     boy.body.allowGravity = false;
 
-    this._spawnImage('chair', x, y);
+    this._spawnImage('chair_' + imgName, x, y + 4);
 
     const bubble = this.game.add.group(this.bubbles);
-    bubble.add(this._spawnImage('bubble', x, y - 48));
-    bubble.add(this._spawnImage('key', x, y - 68));    
+    bubble.add(this._spawnImage('bubble', x, y - 58));
+    bubble.add(this._spawnImage('key', x, y - 78));    
 
     // add a small 'up & down' animation via a tween
     bubble.y -= 3;
