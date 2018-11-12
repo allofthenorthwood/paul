@@ -238,6 +238,7 @@ LoadingState.preload = function () {
     this.game.load.audio('sfx:door', 'audio/door.wav');
     this.game.load.audio('bgm', ['audio/bgm.mp3', 'audio/bgm.ogg']);
 
+    // Best font size: 17
     this.game.load.bitmapFont('SilkscreenBitmap', 'fonts/SilkscreenBitmap.png', 'fonts/SilkscreenBitmap.fnt');
 };
 
@@ -331,18 +332,6 @@ PlayState.init = function (data) {
     this.coinPickupCount = 0;
     this.hasWater = false;
     this.level = (data.level || 0) % LEVEL_COUNT;
-
-    this.textParams = {
-        font: "normal 18px Silkscreen",
-        fill: "#ffffff"
-    };
-    this.textParamsWrap = {
-        font: "normal 18px Silkscreen",
-        fill: "#ffffff",
-        wordWrap: true,
-        wordWrapWidth: 290
-    };
-
 };
 
 PlayState.create = function () {
@@ -375,9 +364,9 @@ PlayState.create = function () {
     this.keys.two.onUp.add(() => this._timerFall());
     this.keys.three.onUp.add(() => this._spotlightsOff());
 
-    this.game.add.bitmapText(100, 60, 'SilkscreenBitmap', 'Press 1 to blow a fuse', 21);
-    this.game.add.bitmapText(100, 80, 'SilkscreenBitmap', 'Press 2 to knock the timer over', 21);
-    this.game.add.bitmapText(100, 100, 'SilkscreenBitmap', 'Press 3 to turn the spotlights off', 21);
+    this.game.add.bitmapText(100, 60, 'SilkscreenBitmap', 'Press 1 to blow a fuse', 17);
+    this.game.add.bitmapText(100, 80, 'SilkscreenBitmap', 'Press 2 to knock the timer over', 17);
+    this.game.add.bitmapText(100, 100, 'SilkscreenBitmap', 'Press 3 to turn the spotlights off', 17);
 
     //  Create our Timer
     timer = this.game.time.create(false);
@@ -816,17 +805,20 @@ PlayState._createDialogueBox = function () {
     this.dialogueBox = this.game.add.group();
     this.dialogueBox.add(this.game.make.image(0, 0, "dialogue_box"));
 
-    this.dialogueBox.add(this.game.add.text(15, 12, "Welcome to My Brother, My Brother, and Me!",
-        this.textParamsWrap));
+    const text = this.game.add.bitmapText(16, 16, "SilkscreenBitmap", "", 17);
+    text.maxWidth = 280;
+    text.smoothed = false;
+    text.text = "Hello and welcome to My Brother, My Brother, and Me!";
 
     this.dialogueBox.position.set(323, 250);
+    this.dialogueBox.add(text);
 
-    this.dialogueBox.y -= 3;
-    this.game.add.tween(this.dialogueBox)
-        .to({y: this.dialogueBox.y + 6}, 800, Phaser.Easing.Sinusoidal.InOut)
-        .yoyo(true)
-        .loop()
-        .start();
+    // this.dialogueBox.y -= 3;
+    // this.game.add.tween(this.dialogueBox)
+    //     .to({y: this.dialogueBox.y + 6}, 800, Phaser.Easing.Sinusoidal.InOut)
+    //     .yoyo(true)
+    //     .loop()
+    //     .start();
 };
 
 // =============================================================================
