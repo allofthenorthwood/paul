@@ -206,7 +206,7 @@ LoadingState.preload = function () {
     this.game.load.image('platform:full', 'images/platform_full.png');
     this.game.load.image('platform:side', 'images/platform_side.png');
     this.game.load.image('ladder:1x4', 'images/ladder_1x4.png');
-    this.game.load.image('key', 'images/key.png');
+    this.game.load.image('water', 'images/water.png');
     this.game.load.image('darkness', 'images/darkness.png');
     this.game.load.image('darkness_stage', 'images/darkness_stage.png');
     this.game.load.image('chair_justin', 'images/chair_justin.png');
@@ -229,11 +229,11 @@ LoadingState.preload = function () {
     this.game.load.spritesheet('coin', 'images/coin_animated.png', 22, 22);
     this.game.load.spritesheet('timer', 'images/timer.png', 38, 18);
     this.game.load.spritesheet('spider', 'images/spider.png', 42, 32);
-    this.game.load.spritesheet('icon:key', 'images/key_icon.png', 34, 30);
+    this.game.load.spritesheet('icon:water', 'images/water_icon.png', 20, 34);
 
     this.game.load.audio('sfx:jump', 'audio/jump.wav');
     this.game.load.audio('sfx:coin', 'audio/coin.wav');
-    this.game.load.audio('sfx:key', 'audio/key.wav');
+    this.game.load.audio('sfx:water', 'audio/water.wav');
     this.game.load.audio('sfx:stomp', 'audio/stomp.wav');
     this.game.load.audio('sfx:door', 'audio/door.wav');
     this.game.load.audio('bgm', ['audio/bgm.mp3', 'audio/bgm.ogg']);
@@ -327,7 +327,7 @@ PlayState.init = function (data) {
     });
 
     this.coinPickupCount = 0;
-    this.hasKey = false;
+    this.hasWater = false;
     this.level = (data.level || 0) % LEVEL_COUNT;
 };
 
@@ -339,7 +339,7 @@ PlayState.create = function () {
     this.sfx = {
         jump: this.game.add.audio('sfx:jump'),
         coin: this.game.add.audio('sfx:coin'),
-        key: this.game.add.audio('sfx:key'),
+        water: this.game.add.audio('sfx:water'),
         stomp: this.game.add.audio('sfx:stomp'),
         door: this.game.add.audio('sfx:door')
     };
@@ -411,7 +411,7 @@ PlayState.update = function () {
         ` ${Math.floor(this.game.input.activePointer.y)}`;
     this.levelFont.text = `${this.level + 1}`;
 
-    this.keyIcon.frame = this.hasKey ? 1 : 0;
+    this.waterIcon.frame = this.hasWater ? 1 : 0;
 };
 
 PlayState.shutdown = function () {
@@ -428,8 +428,8 @@ PlayState._handleCollisions = function () {
         null, this);
     // hero vs ladder (climb)
     const onLadder = this.game.physics.arcade.overlap(this.hero, this.ladders);
-    // hero vs key (pick up)
-    this.game.physics.arcade.overlap(this.hero, this.key, this._onHeroVsKey,
+    // hero vs water (pick up)
+    this.game.physics.arcade.overlap(this.hero, this.water, this._onHeroVsWater,
         null, this);
     // hero vs boy (deliver item)
     this.game.physics.arcade.overlap(this.hero, this.griffin, this._onHeroVsGriffin,
@@ -484,10 +484,10 @@ PlayState._handleInput = function (onLadder) {
     }
 };
 
-PlayState._onHeroVsKey = function (hero, key) {
-    this.sfx.key.play();
-    key.kill();
-    this.hasKey = true;
+PlayState._onHeroVsWater = function (hero, water) {
+    this.sfx.water.play();
+    water.kill();
+    this.hasWater = true;
 };
 
 PlayState._onHeroVsCoin = function (hero, coin) {
@@ -518,11 +518,11 @@ PlayState._onHeroVsEnemy = function (hero, enemy) {
 };
 
 PlayState._onHeroVsGriffin = function (hero, griffin) {
-    if (this.hasKey) {
-        this.hasKey = false;
+    if (this.hasWater) {
+        this.hasWater = false;
         this.coinPickupCount++;
         this.bubbleIndex['griffin'].bubble.visible = false;
-        this.key.revive();
+        //this.water.revive();
     }
 };
 
@@ -566,7 +566,7 @@ PlayState._loadLevel = function (data) {
     data.ladders.forEach(this._spawnLadder, this);
     data.coins.forEach(this._spawnCoin, this);
     this._spawnStage(data.stage.x, data.stage.y);
-    this._spawnKey(data.key.x, data.key.y);
+    this._spawnWater(data.water.x, data.water.y);
     this._spawnTable(data.table.x, data.table.y);
     this._spawnTimer(data.timer.x, data.timer.y);
     this._spawnGenerator(data.generator.x, data.generator.y);
@@ -645,17 +645,17 @@ PlayState._spawnCoin = function (coin) {
     sprite.animations.play('rotate');
 };
 
-PlayState._spawnKey = function (x, y) {
-    this.key = this.bgDecoration.create(x, y, 'key');
-    this.key.anchor.set(0.5, 0.5);
-    // enable physics to detect collisions, so the hero can pick the key up
-    this.game.physics.enable(this.key);
-    this.key.body.allowGravity = false;
+PlayState._spawnWater = function (x, y) {
+    this.water = this.bgDecoration.create(x, y, 'water');
+    this.water.anchor.set(0.5, 0.5);
+    // enable physics to detect collisions, so the hero can pick the water up
+    this.game.physics.enable(this.water);
+    this.water.body.allowGravity = false;
 
     // add a small 'up & down' animation via a tween
-    this.key.y -= 3;
-    this.game.add.tween(this.key)
-        .to({y: this.key.y + 6}, 800, Phaser.Easing.Sinusoidal.InOut)
+    this.water.y -= 3;
+    this.game.add.tween(this.water)
+        .to({y: this.water.y + 6}, 800, Phaser.Easing.Sinusoidal.InOut)
         .yoyo(true)
         .loop()
         .start();
@@ -687,7 +687,7 @@ PlayState._spawnBoy = function (imgName, x, y) {
 
     const bubble = this.game.add.group(this.bubbles);
     bubble.add(this._spawnImage('bubble', x, y - 58));
-    bubble.add(this._spawnImage('key', x, y - 78));    
+    bubble.add(this._spawnImage('water', x, y - 70));    
 
     // add a small 'up & down' animation via a tween
     bubble.y -= 3;
@@ -750,10 +750,10 @@ PlayState._createHud = function () {
     this.levelFont = this.game.add.retroFont('font:numbers', 20, 26,
         NUMBERS_STR, 6);
 
-    this.keyIcon = this.game.make.image(0, 19, 'icon:key');
-    this.keyIcon.anchor.set(0, 0.5);
+    this.waterIcon = this.game.make.image(0, 19, 'icon:water');
+    this.waterIcon.anchor.set(0, 0.5);
 
-    const coinIcon = this.game.make.image(this.keyIcon.width + 7, 0, 'icon:coin');
+    const coinIcon = this.game.make.image(this.waterIcon.width + 7, 0, 'icon:coin');
     const coinScoreImg = this.game.make.image(coinIcon.x + coinIcon.width,
         coinIcon.height / 2, this.coinFont);
     coinScoreImg.anchor.set(0, 0.5);
@@ -769,7 +769,7 @@ PlayState._createHud = function () {
     this.hud.add(coinScoreImg);
     this.hud.add(mousePosImg);
     this.hud.add(levelImg);
-    this.hud.add(this.keyIcon);
+    this.hud.add(this.waterIcon);
     this.hud.position.set(10, 10);
 };
 
