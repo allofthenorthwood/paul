@@ -13,14 +13,14 @@
         {"image": "platform:side", "x": 720, "y": 314}
     ],
     "ladders": [
-        {"image": "ladder:1x4", "x": 15, "y": 146},
-        {"image": "ladder:1x4", "x": 905, "y": 146},
+        {"image": "ladder:1x4", "x": 15, "y": 148},
+        {"image": "ladder:1x4", "x": 905, "y": 148},
 
-        {"image": "ladder:1x4", "x": 255, "y": 302},
-        {"image": "ladder:1x4", "x": 663, "y": 302},
+        {"image": "ladder:1x4", "x": 255, "y": 304},
+        {"image": "ladder:1x4", "x": 663, "y": 304},
 
-        {"image": "ladder:1x4", "x": 15, "y": 420},
-        {"image": "ladder:1x4", "x": 905, "y": 420}
+        {"image": "ladder:1x4", "x": 15, "y": 422},
+        {"image": "ladder:1x4", "x": 905, "y": 422}
     ],
     "decoration": [],
     "coins": [],
