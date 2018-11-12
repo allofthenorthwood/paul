@@ -226,7 +226,7 @@ LoadingState.preload = function () {
     this.game.load.spritesheet('spotlights', 'images/spotlights.png', 270, 74);
     this.game.load.spritesheet('stage:lighting', 'images/stage_lighting.png', 338, 294);
     this.game.load.spritesheet('coin', 'images/coin_animated.png', 22, 22);
-    this.game.load.spritesheet('timer', 'images/timer.png', 38, 18);
+    this.game.load.spritesheet('timer', 'images/timer.png', 42, 18);
     this.game.load.spritesheet('spider', 'images/spider.png', 42, 32);
     this.game.load.spritesheet('fusebox', 'images/fusebox.png', 110, 110);
     this.game.load.spritesheet('icon:water', 'images/water_icon.png', 20, 34);
@@ -407,12 +407,14 @@ PlayState._spotlightsOn = function () {
 PlayState._timerFall = function () {
     if (!this.timerDown) {
         this.timerDown = true;
+        this.timerText.visible = false;
         this.timer.animations.play('down');
     }
 };
 PlayState._timerFix = function () {
     if (this.timerDown) {
         this.timerDown = false;
+        this.timerText.visible = true;
         this.timer.animations.play('up');
     }
 };
@@ -434,8 +436,10 @@ PlayState.update = function () {
     // update hud
     this.waterIcon.frame = this.hasWater ? 1 : 0;
     this.coinScoreText.text = `x${this.coinPickupCount}`;
-    this.timeLeftText.text = `${Math.floor(this.timeLeft/60)}:${("0" +
+    const timeStr = `${Math.floor(this.timeLeft/60)}:${("0" +
         (this.timeLeft % 60)).slice(-2)}`;
+    this.timeLeftText.text = timeStr;
+    this.timerText.text = timeStr;
     if (this.debug) {
         this.mousePosText.text = `${Math.floor(this.game.input.activePointer.x)}` +
             ` ${Math.floor(this.game.input.activePointer.y)}`;
@@ -731,12 +735,22 @@ PlayState._spawnBoy = function (imgName, x, y) {
     return boy;
 };
 PlayState._spawnTimer = function (x, y) {
-    const sprite = this._spawnImage('timer', x, y);
+    const timerGroup = this.game.add.group();
+    const sprite = this._spawnImage('timer', 0, 0);
     this.game.physics.enable(sprite);
     sprite.body.allowGravity = false;
     sprite.animations.add('up', [0], 6, true);
     sprite.animations.add('down', [1], 6, true);
     this.timer = sprite;
+
+    this.timerText = this.game.add.bitmapText(-18, -16, "SilkscreenBitmap", "4:20", 17);
+    this.timerText.smoothed = false;
+    this.timerText.tint = 0xd41e1e;
+
+    timerGroup.add(this.timer);
+    timerGroup.add(this.timerText);
+    timerGroup.position.set(x, y);
+    this.bgDecoration.add(timerGroup);  
 };
 PlayState._spawnFusebox = function (x, y) {
     this.fusebox = this._spawnImage('fusebox', x, y);
