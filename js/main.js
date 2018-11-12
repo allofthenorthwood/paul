@@ -213,7 +213,6 @@ LoadingState.preload = function () {
     this.game.load.image('chair_travis', 'images/chair_travis.png');
     this.game.load.image('chair_griffin', 'images/chair_griffin.png');
     this.game.load.image('dialogue_box', 'images/dialogue_box.png');
-    this.game.load.image('generator', 'images/generator.png');
     this.game.load.image('table', 'images/table.png');
     this.game.load.image('justin', 'images/justin.png');
     this.game.load.image('travis', 'images/travis.png');
@@ -229,6 +228,7 @@ LoadingState.preload = function () {
     this.game.load.spritesheet('coin', 'images/coin_animated.png', 22, 22);
     this.game.load.spritesheet('timer', 'images/timer.png', 38, 18);
     this.game.load.spritesheet('spider', 'images/spider.png', 42, 32);
+    this.game.load.spritesheet('fusebox', 'images/fusebox.png', 110, 110);
     this.game.load.spritesheet('icon:water', 'images/water_icon.png', 20, 34);
 
     this.game.load.audio('sfx:jump', 'audio/jump.wav');
@@ -360,13 +360,30 @@ PlayState.create = function () {
     this.keys.one.onUp.add(() => this._lightsOut());
     this.keys.two.onUp.add(() => this._timerFall());
     this.keys.three.onUp.add(() => this._spotlightsOff());
-};
 
+    //  Create our Timer
+    timer = this.game.time.create(false);
+    this.timeLeft = 260; // Seconds left in level
+    timer.loop(1000, this._updateTimer, this);
+    timer.start();
+};
+PlayState._updateTimer = function () {
+    if (this.timeLeft === 0) {
+        // TODO: end the level
+        console.log('Level over!')
+    } else {
+        this.timeLeft--;
+    }
+};
 PlayState._lightsOut = function () {
-    this.dark = true;
+    this.fusebox.animations.play('dying');
+    this.fusebox.animations.currentAnim.onComplete.add(function () { this.isDark = true; }, this);
 };
 PlayState._lightsOn = function () {
-    this.dark = false;
+    if (this.isDark) {
+        this.fusebox.animations.play('fixed');
+        this.fusebox.animations.currentAnim.onComplete.add(function () { this.isDark = false; }, this);
+    }
 };
 PlayState._spotlightsOff = function () {
     this.stageDarkness.visible = true;
@@ -396,20 +413,21 @@ PlayState.update = function () {
     this._handleInput(onLadder);
 
     // update darkness
-    if (!this.dark) {
-        this.darkness.visible = false;
+    if (!this.isDark) {
+        this.isDarkness.visible = false;
     }
     else {
-        this.darkness.visible = true;
-        this.darkness.x = this.hero.x;
-        this.darkness.y = this.hero.y;
+        this.isDarkness.visible = true;
+        this.isDarkness.x = this.hero.x;
+        this.isDarkness.y = this.hero.y;
     }
 
     // update scoreboards
     this.coinFont.text = `x${this.coinPickupCount}`;
     this.mousePosFont.text = `${Math.floor(this.game.input.activePointer.x)}` +
         ` ${Math.floor(this.game.input.activePointer.y)}`;
-    this.levelFont.text = `${this.level + 1}`;
+    this.timeLeftFont.text = `${Math.floor(this.timeLeft/60)} ${("0" +
+        (this.timeLeft % 60)).slice(-2)}`;
 
     this.waterIcon.frame = this.hasWater ? 1 : 0;
 };
@@ -435,7 +453,7 @@ PlayState._handleCollisions = function () {
     this.game.physics.arcade.overlap(this.hero, this.griffin, this._onHeroVsGriffin,
         null, this);
     //
-    this.game.physics.arcade.overlap(this.hero, this.generator, this._lightsOn,
+    this.game.physics.arcade.overlap(this.hero, this.fusebox, this._lightsOn,
         null, this);
     this.game.physics.arcade.overlap(this.hero, this.timer, this._timerFix,
         null, this);
@@ -569,7 +587,7 @@ PlayState._loadLevel = function (data) {
     this._spawnWater(data.water.x, data.water.y);
     this._spawnTable(data.table.x, data.table.y);
     this._spawnTimer(data.timer.x, data.timer.y);
-    this._spawnGenerator(data.generator.x, data.generator.y);
+    this._spawnFusebox(data.fusebox.x, data.fusebox.y);
     this._spawnSpotlights(data.spotlights.x, data.spotlights.y);
 
     // 
@@ -661,8 +679,8 @@ PlayState._spawnWater = function (x, y) {
         .start();
 };
 PlayState._spawnDarkness = function (x, y) {
-    this.darkness = this.overlays.create(x, y, 'darkness');
-    this.darkness.anchor.set(0.5, 0.5);
+    this.isDarkness = this.overlays.create(x, y, 'darkness');
+    this.isDarkness.anchor.set(0.5, 0.5);
 };
 PlayState._spawnStage = function (x, y) {
     this.bgDecoration.create(x, y, 'crowd');
@@ -710,10 +728,13 @@ PlayState._spawnTimer = function (x, y) {
     sprite.animations.add('down', [1], 6, true);
     this.timer = sprite;
 };
-PlayState._spawnGenerator = function (x, y) {
-    this.generator = this._spawnImage('generator', x, y);
-    this.game.physics.enable(this.generator);
-    this.generator.body.allowGravity = false;
+PlayState._spawnFusebox = function (x, y) {
+    this.fusebox = this._spawnImage('fusebox', x, y);
+    this.game.physics.enable(this.fusebox);
+    this.fusebox.body.allowGravity = false;
+    this.fusebox.animations.add('closed', [0]);
+    this.fusebox.animations.add('dying', [0, 1, 0, 1, 2, 4, 2, 4, 2, 4, 3], 6, false);
+    this.fusebox.animations.add('fixed', [2, 0], 1, false);
 };
 PlayState._spawnSpotlights = function (x, y) {
     const sprite = this.overlays.create(x, y, 'spotlights');
@@ -747,7 +768,7 @@ PlayState._createHud = function () {
         NUMBERS_STR, 6);
     this.mousePosFont = this.game.add.retroFont('font:numbers', 20, 26,
         NUMBERS_STR, 6);
-    this.levelFont = this.game.add.retroFont('font:numbers', 20, 26,
+    this.timeLeftFont = this.game.add.retroFont('font:numbers', 20, 26,
         NUMBERS_STR, 6);
 
     this.waterIcon = this.game.make.image(0, 19, 'icon:water');
@@ -761,7 +782,7 @@ PlayState._createHud = function () {
     const mousePosImg = this.game.make.image(200, coinIcon.height / 2,  this.mousePosFont);
     mousePosImg.anchor.set(0, 0.5);
 
-    const levelImg = this.game.make.image(800, coinIcon.height / 2,  this.levelFont);
+    const levelImg = this.game.make.image(800, coinIcon.height / 2,  this.timeLeftFont);
     levelImg.anchor.set(0, 0.5);
 
     this.hud = this.game.add.group();

@@ -28,7 +28,7 @@
     "spiders": [],
     "table": {"x": 500, "y": 465},
     "timer": {"x": 380, "y": 460},
-    "generator": {"x": 480, "y": 588},
+    "fusebox": {"x": 480, "y": 600},
     "spotlights": {"x": 480, "y": 170},
     "stage": {"x": 308, "y": 170},
     "water": {"x": 100, "y": 440}
