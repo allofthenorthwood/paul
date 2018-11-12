@@ -332,6 +332,10 @@ PlayState.init = function (data) {
 
     this.textParams = {
         font: "normal 18px Silkscreen",
+        fill: "#ffffff"
+    };
+    this.textParamsWrap = {
+        font: "normal 18px Silkscreen",
         fill: "#ffffff",
         wordWrap: true,
         wordWrapWidth: 290
@@ -367,9 +371,9 @@ PlayState.create = function () {
     this.keys.one.onUp.add(() => this._lightsOut());
     this.keys.two.onUp.add(() => this._timerFall());
     this.keys.three.onUp.add(() => this._spotlightsOff());
-    this.game.add.text(100, 50, 'Press 1 to blow a fuse', this.textParams);
-    this.game.add.text(100, 70, 'Press 2 to knock the timer over', this.textParams);
-    this.game.add.text(100, 120, 'Press 3 to turn the spotlights off', this.textParams);
+    this.game.add.text(100, 60, 'Press 1 to blow a fuse', this.textParams);
+    this.game.add.text(100, 80, 'Press 2 to knock the timer over', this.textParams);
+    this.game.add.text(100, 100, 'Press 3 to turn the spotlights off', this.textParams);
 
     //  Create our Timer
     timer = this.game.time.create(false);
@@ -809,7 +813,7 @@ PlayState._createDialogueBox = function () {
     this.dialogueBox.add(this.game.make.image(0, 0, "dialogue_box"));
 
     this.dialogueBox.add(this.game.add.text(15, 12, "Welcome to My Brother, My Brother, and Me!",
-        this.textParams));
+        this.textParamsWrap));
 
     this.dialogueBox.position.set(323, 250);
 
