@@ -332,6 +332,8 @@ PlayState.init = function (data) {
     this.coinPickupCount = 0;
     this.hasWater = false;
     this.level = (data.level || 0) % LEVEL_COUNT;
+
+    this.debug = false;
 };
 
 PlayState.create = function () {
@@ -429,14 +431,15 @@ PlayState.update = function () {
         this.isDarkness.y = this.hero.y;
     }
 
-    // update scoreboards
-    this.coinFont.text = `x${this.coinPickupCount}`;
-    this.mousePosFont.text = `${Math.floor(this.game.input.activePointer.x)}` +
-        ` ${Math.floor(this.game.input.activePointer.y)}`;
-    this.timeLeftFont.text = `${Math.floor(this.timeLeft/60)} ${("0" +
-        (this.timeLeft % 60)).slice(-2)}`;
-
+    // update hud
     this.waterIcon.frame = this.hasWater ? 1 : 0;
+    this.coinScoreText.text = `x${this.coinPickupCount}`;
+    this.timeLeftText.text = `${Math.floor(this.timeLeft/60)}:${("0" +
+        (this.timeLeft % 60)).slice(-2)}`;
+    if (this.debug) {
+        this.mousePosText.text = `${Math.floor(this.game.input.activePointer.x)}` +
+            ` ${Math.floor(this.game.input.activePointer.y)}`;
+    }
 };
 
 PlayState.shutdown = function () {
@@ -765,40 +768,26 @@ PlayState._spawnTable = function (x, y) {
 };
 
 PlayState._createHud = function () {
-    const NUMBERS_STR = '0123456789X ';
-    const FONT_STR = "ABCDEFGHIJKLMNOPQRSTUVWXYZ!№;%:?*()_+-=.,/|\"'@#$^&{}[]<>1234567890";
-    
-    this.coinFont = this.game.add.retroFont('font:full', 20, 26,
-        NUMBERS_STR, 6);
-
-    this.coinFont = this.game.add.retroFont('font:numbers', 20, 26,
-        NUMBERS_STR, 6);
-    this.mousePosFont = this.game.add.retroFont('font:numbers', 20, 26,
-        NUMBERS_STR, 6);
-    this.timeLeftFont = this.game.add.retroFont('font:numbers', 20, 26,
-        NUMBERS_STR, 6);
-
     this.waterIcon = this.game.make.image(0, 19, 'icon:water');
     this.waterIcon.anchor.set(0, 0.5);
 
     const coinIcon = this.game.make.image(this.waterIcon.width + 7, 0, 'icon:coin');
-    const coinScoreImg = this.game.make.image(coinIcon.x + coinIcon.width,
-        coinIcon.height / 2, this.coinFont);
-    coinScoreImg.anchor.set(0, 0.5);
+    const y = 4;
 
-    const mousePosImg = this.game.make.image(200, coinIcon.height / 2,  this.mousePosFont);
-    mousePosImg.anchor.set(0, 0.5);
-
-    const levelImg = this.game.make.image(800, coinIcon.height / 2,  this.timeLeftFont);
-    levelImg.anchor.set(0, 0.5);
+    this.mousePosText = this.game.add.bitmapText(600, y, "SilkscreenBitmap", "", 34);
+    this.mousePosText.smoothed = false;
+    this.coinScoreText = this.game.add.bitmapText(coinIcon.x + coinIcon.width, y, "SilkscreenBitmap", "", 34);
+    this.coinScoreText.smoothed = false;
+    this.timeLeftText = this.game.add.bitmapText(200, y, "SilkscreenBitmap", "", 34);
+    this.timeLeftText.smoothed = false;
 
     this.hud = this.game.add.group();
     this.hud.add(coinIcon);
-    this.hud.add(coinScoreImg);
-    this.hud.add(mousePosImg);
-    this.hud.add(levelImg);
+    this.hud.add(this.coinScoreText);
+    this.hud.add(this.mousePosText);
+    this.hud.add(this.timeLeftText);
     this.hud.add(this.waterIcon);
-    this.hud.position.set(10, 10);
+    this.hud.position.set(10, 8);
 };
 
 PlayState._createDialogueBox = function () {
