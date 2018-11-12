@@ -178,6 +178,12 @@ LoadingState = {};
 LoadingState.init = function () {
     // keep crispy-looking pixels
     this.game.renderer.renderSession.roundPixels = true;
+    // TODO: use this to scale the game!
+    this.game.scale.scaleMode = Phaser.ScaleManager.USER_SCALE;
+    this.game.scale.setUserScale(1, 1);
+    // enable crisp rendering
+    this.game.renderer.renderSession.roundPixels = true;
+    Phaser.Canvas.setImageRenderingCrisp(this.game.canvas);
 };
 
 LoadingState.preload = function () {
@@ -185,6 +191,7 @@ LoadingState.preload = function () {
     this.game.load.text('level:1', 'data/level01.yaml');
 
     this.game.load.image('font:numbers', 'images/numbers.png');
+    this.game.load.image('font:full', 'images/font.png');
 
     this.game.load.image('icon:coin', 'images/coin_icon.png');
     this.game.load.image('background', 'images/background.png');
@@ -205,6 +212,7 @@ LoadingState.preload = function () {
     this.game.load.image('chair_justin', 'images/chair_justin.png');
     this.game.load.image('chair_travis', 'images/chair_travis.png');
     this.game.load.image('chair_griffin', 'images/chair_griffin.png');
+    this.game.load.image('dialogue_box', 'images/dialogue_box.png');
     this.game.load.image('generator', 'images/generator.png');
     this.game.load.image('table', 'images/table.png');
     this.game.load.image('justin', 'images/justin.png');
@@ -347,6 +355,7 @@ PlayState.create = function () {
 
     // create UI score boards
     this._createHud();
+    this._createDialogueBox();
 
     this.keys.one.onUp.add(() => this._lightsOut());
     this.keys.two.onUp.add(() => this._timerFall());
@@ -729,6 +738,11 @@ PlayState._spawnTable = function (x, y) {
 
 PlayState._createHud = function () {
     const NUMBERS_STR = '0123456789X ';
+    const FONT_STR = "ABCDEFGHIJKLMNOPQRSTUVWXYZ!№;%:?*()_+-=.,/|\"'@#$^&{}[]<>1234567890";
+    
+    this.coinFont = this.game.add.retroFont('font:full', 20, 26,
+        NUMBERS_STR, 6);
+
     this.coinFont = this.game.add.retroFont('font:numbers', 20, 26,
         NUMBERS_STR, 6);
     this.mousePosFont = this.game.add.retroFont('font:numbers', 20, 26,
@@ -757,6 +771,23 @@ PlayState._createHud = function () {
     this.hud.add(levelImg);
     this.hud.add(this.keyIcon);
     this.hud.position.set(10, 10);
+};
+
+PlayState._createDialogueBox = function () {
+    this.dialogueBox = this.game.add.group();
+    this.dialogueBox.add(this.game.make.image(0, 0, "dialogue_box"));
+
+    this.dialogueBox.add(this.game.add.text(15, 12, "Welcome to My Brother, My Brother, and Me!",
+        {font: "normal 18px Silkscreen", fill: "#ffffff", wordWrap: true, wordWrapWidth: 290}));
+
+    this.dialogueBox.position.set(323, 250);
+
+    this.dialogueBox.y -= 3;
+    this.game.add.tween(this.dialogueBox)
+        .to({y: this.dialogueBox.y + 6}, 800, Phaser.Easing.Sinusoidal.InOut)
+        .yoyo(true)
+        .loop()
+        .start();
 };
 
 // =============================================================================
