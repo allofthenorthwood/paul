@@ -237,6 +237,8 @@ LoadingState.preload = function () {
     this.game.load.audio('sfx:stomp', 'audio/stomp.wav');
     this.game.load.audio('sfx:door', 'audio/door.wav');
     this.game.load.audio('bgm', ['audio/bgm.mp3', 'audio/bgm.ogg']);
+
+    this.game.load.bitmapFont('SilkscreenBitmap', 'fonts/SilkscreenBitmap.png', 'fonts/SilkscreenBitmap.fnt');
 };
 
 LoadingState.create = function () {
@@ -340,6 +342,7 @@ PlayState.init = function (data) {
         wordWrap: true,
         wordWrapWidth: 290
     };
+
 };
 
 PlayState.create = function () {
@@ -371,9 +374,10 @@ PlayState.create = function () {
     this.keys.one.onUp.add(() => this._lightsOut());
     this.keys.two.onUp.add(() => this._timerFall());
     this.keys.three.onUp.add(() => this._spotlightsOff());
-    this.game.add.text(100, 60, 'Press 1 to blow a fuse', this.textParams);
-    this.game.add.text(100, 80, 'Press 2 to knock the timer over', this.textParams);
-    this.game.add.text(100, 100, 'Press 3 to turn the spotlights off', this.textParams);
+
+    this.game.add.bitmapText(100, 60, 'SilkscreenBitmap', 'Press 1 to blow a fuse', 21);
+    this.game.add.bitmapText(100, 80, 'SilkscreenBitmap', 'Press 2 to knock the timer over', 21);
+    this.game.add.bitmapText(100, 100, 'SilkscreenBitmap', 'Press 3 to turn the spotlights off', 21);
 
     //  Create our Timer
     timer = this.game.time.create(false);
