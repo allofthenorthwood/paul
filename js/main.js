@@ -224,14 +224,19 @@ LoadingState.preload = function () {
     this.game.load.spritesheet('decoration', 'images/decor.png', 42, 42);
     this.game.load.spritesheet('hero', 'images/hero.png', 38, 48);
     this.game.load.spritesheet('spotlights', 'images/spotlights.png', 270, 74);
+    this.game.load.spritesheet('switch', 'images/switch.png', 42, 78);
     this.game.load.spritesheet('stage:lighting', 'images/stage_lighting.png', 338, 294);
     this.game.load.spritesheet('coin', 'images/coin_animated.png', 22, 22);
-    this.game.load.spritesheet('timer', 'images/timer.png', 42, 18);
+    this.game.load.spritesheet('timer', 'images/timer.png', 72, 60);
     this.game.load.spritesheet('spider', 'images/spider.png', 42, 32);
     this.game.load.spritesheet('fusebox', 'images/fusebox.png', 110, 110);
     this.game.load.spritesheet('icon:water', 'images/water_icon.png', 20, 34);
 
     this.game.load.audio('sfx:jump', 'audio/jump.wav');
+    this.game.load.audio('sfx:timer_drop', 'audio/timer_drop.wav');
+    this.game.load.audio('sfx:electricity', 'audio/electricity.wav');
+    this.game.load.audio('sfx:switch', 'audio/switch.wav');
+    this.game.load.audio('sfx:breaker', 'audio/breaker.wav');
     this.game.load.audio('sfx:coin', 'audio/coin.wav');
     this.game.load.audio('sfx:water', 'audio/water.wav');
     this.game.load.audio('sfx:stomp', 'audio/stomp.wav');
@@ -334,6 +339,7 @@ PlayState.init = function (data) {
     this.level = (data.level || 0) % LEVEL_COUNT;
 
     this.debug = false;
+    this.instructionCount = 0;
 };
 
 PlayState.create = function () {
@@ -343,13 +349,20 @@ PlayState.create = function () {
     // create sound entities
     this.sfx = {
         jump: this.game.add.audio('sfx:jump'),
+        timerDrop: this.game.add.audio('sfx:timer_drop'),
+        electricity: this.game.add.audio('sfx:electricity'),
+        switch: this.game.add.audio('sfx:switch'),
+        breaker: this.game.add.audio('sfx:breaker'),
         coin: this.game.add.audio('sfx:coin'),
         water: this.game.add.audio('sfx:water'),
         stomp: this.game.add.audio('sfx:stomp'),
         door: this.game.add.audio('sfx:door')
     };
-    this.bgm = this.game.add.audio('bgm');
-    this.bgm.loopFull();
+    this.sfx.electricity.onStop.add(() => {
+        this.sfx.switch.play();
+    });
+    //this.bgm = this.game.add.audio('bgm');
+    //this.bgm.loopFull();
 
     // create level entities and decoration
     this.game.add.image(0, 0, 'background');
@@ -365,10 +378,10 @@ PlayState.create = function () {
     this.keys.one.onUp.add(() => this._lightsOut());
     this.keys.two.onUp.add(() => this._timerFall());
     this.keys.three.onUp.add(() => this._spotlightsOff());
-
-    this.game.add.bitmapText(100, 60, 'SilkscreenBitmap', 'Press 1 to blow a fuse', 17);
-    this.game.add.bitmapText(100, 80, 'SilkscreenBitmap', 'Press 2 to knock the timer over', 17);
-    this.game.add.bitmapText(100, 100, 'SilkscreenBitmap', 'Press 3 to turn the spotlights off', 17);
+    
+    this._addInstruction('Press 1 to blow a fuse');
+    this._addInstruction('Press 2 to knock the timer over');
+    this._addInstruction('Press 3 to turn the spotlights off');
 
     //  Create our Timer
     timer = this.game.time.create(false);
@@ -376,6 +389,13 @@ PlayState.create = function () {
     timer.loop(1000, this._updateTimer, this);
     timer.start();
 };
+
+PlayState._addInstruction = function (ins) {
+    this.bgDecoration.add(this.game.add.bitmapText(100,
+        60 + 20*this.instructionCount, 'SilkscreenBitmap', ins, 17));
+    this.instructionCount ++;
+}
+
 PlayState._updateTimer = function () {
     if (this.timeLeft === 0) {
         // TODO: end the level
@@ -385,30 +405,43 @@ PlayState._updateTimer = function () {
     }
 };
 PlayState._lightsOut = function () {
-    this.fusebox.animations.play('dying');
-    this.fusebox.animations.currentAnim.onComplete.add(function () { this.isDark = true; }, this);
+    if (!this.isDark) {
+        this.fusebox.animations.play('dying');
+        this.fusebox.animations.currentAnim.onComplete.add(function () { this.isDark = true; }, this);
+        this.sfx.electricity.play();
+    }
 };
 PlayState._lightsOn = function () {
     if (this.isDark) {
         this.fusebox.animations.play('fixed');
-        this.fusebox.animations.currentAnim.onComplete.add(function () { this.isDark = false; }, this);
+        this.isDark = false;
+        this.sfx.switch.play();
     }
 };
 PlayState._spotlightsOff = function () {
-    this.stageDarkness.visible = true;
-    this.stageLighting.visible = false;
-    this.spotlights.animations.play('off');
+    if (this.stageLighting.visible === true) {
+        this.stageLighting.visible = false;
+        this.stageDarkness.visible = true;
+        this.spotlights.animations.play('off');
+        this.spotlightSwitch.animations.play('off');
+        this.sfx.breaker.play();
+    }
 };
 PlayState._spotlightsOn = function () {
-    this.stageDarkness.visible = false;
-    this.stageLighting.visible = true;
-    this.spotlights.animations.play('on');
+    if (this.stageLighting.visible === false) {
+        this.stageLighting.visible = true;
+        this.stageDarkness.visible = false;
+        this.spotlights.animations.play('on');
+        this.spotlightSwitch.animations.play('on');
+        this.sfx.coin.play();
+    }
 };
 PlayState._timerFall = function () {
     if (!this.timerDown) {
         this.timerDown = true;
         this.timerText.visible = false;
-        this.timer.animations.play('down');
+        this.timer.animations.play('falling');
+        this.sfx.timerDrop.play();
     }
 };
 PlayState._timerFix = function () {
@@ -416,6 +449,7 @@ PlayState._timerFix = function () {
         this.timerDown = false;
         this.timerText.visible = true;
         this.timer.animations.play('up');
+        this.sfx.coin.play();
     }
 };
 
@@ -471,7 +505,7 @@ PlayState._handleCollisions = function () {
         null, this);
     this.game.physics.arcade.overlap(this.hero, this.timer, this._timerFix,
         null, this);
-    this.game.physics.arcade.overlap(this.hero, this.spotlights, this._spotlightsOn,
+    this.game.physics.arcade.overlap(this.hero, this.spotlightSwitch, this._spotlightsOn,
         null, this);
     // collision: hero vs enemies (kill or die)
     this.game.physics.arcade.overlap(this.hero, this.spiders,
@@ -740,10 +774,11 @@ PlayState._spawnTimer = function (x, y) {
     this.game.physics.enable(sprite);
     sprite.body.allowGravity = false;
     sprite.animations.add('up', [0], 6, true);
-    sprite.animations.add('down', [1], 6, true);
+    sprite.animations.add('falling', [3, 2, 4], 2, false);
+    sprite.animations.add('down', [4], 6, true);
     this.timer = sprite;
 
-    this.timerText = this.game.add.bitmapText(-18, -16, "SilkscreenBitmap", "4:20", 17);
+    this.timerText = this.game.add.bitmapText(-30, -16, "SilkscreenBitmap", "4:20", 17);
     this.timerText.smoothed = false;
     this.timerText.tint = 0xd41e1e;
 
@@ -757,18 +792,22 @@ PlayState._spawnFusebox = function (x, y) {
     this.game.physics.enable(this.fusebox);
     this.fusebox.body.allowGravity = false;
     this.fusebox.animations.add('closed', [0]);
-    this.fusebox.animations.add('dying', [0, 1, 0, 1, 2, 4, 2, 4, 2, 4, 3], 6, false);
+    this.fusebox.animations.add('dying', [0, 1, 0, 1, 2, 4, 2, 4, 2, 4, 3], 5, false);
     this.fusebox.animations.add('fixed', [2, 0], 1, false);
 };
 PlayState._spawnSpotlights = function (x, y) {
     const sprite = this.overlays.create(x, y, 'spotlights');
-    sprite.anchor.set(0.5, 0.5);
     sprite.anchor.set(0.5, 0.5)
-    this.game.physics.enable(sprite);
-    sprite.body.allowGravity = false;
-    sprite.animations.add('on', [0], 6, true);
-    sprite.animations.add('off', [1], 6, true);
+    sprite.animations.add('on', [0], 6, false);
+    sprite.animations.add('off', [1], 6, false);
     this.spotlights = sprite;
+
+    const swtch = this.bgDecoration.create(x + 35, y - 90, 'switch');
+    this.game.physics.enable(swtch);
+    swtch.body.allowGravity = false;
+    swtch.animations.add('on', [0], 6, false);
+    swtch.animations.add('off', [4], 6, false);
+    this.spotlightSwitch = swtch;
 
     this.stageLighting = this.overlays.create(x, y, 'stage:lighting');
     this.stageLighting.anchor.set(0.5, 0);
